@@ -21,3 +21,5 @@ log = "0.4"
 specta = { version = "=2.0.0-rc.20" }
 specta-typescript = "0.0.7"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["derive", "typescript"] }
+russh = "0.57"
+uuid = { version = "1", features = ["v4"] }
