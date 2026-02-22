@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicosResworksData/tauri/dev/crates/tauri-config-schema/schema.json",
   "productName": "giterm",
-  "version": "0.1.0",
-  "identifier": "com.beegy.giterm",
+  "version": "1.0.0",
+  "identifier": "com.vero.giterm",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",

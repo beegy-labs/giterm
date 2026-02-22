@@ -14,6 +14,16 @@ pub async fn ssh_connect(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn ssh_test_connection(
+    config: ConnectionConfig,
+    state: State<'_, SshSessionManager>,
+    app: AppHandle,
+) -> Result<(), String> {
+    state.test_connection(config, app).await
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn ssh_write(
     session_id: String,
     data: Vec<u8>,
@@ -31,6 +41,16 @@ pub async fn ssh_resize(
     state: State<'_, SshSessionManager>,
 ) -> Result<(), String> {
     state.resize(&session_id, cols, rows).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ssh_exec(
+    session_id: String,
+    command: String,
+    state: State<'_, SshSessionManager>,
+) -> Result<String, String> {
+    state.exec(&session_id, &command).await
 }
 
 #[tauri::command]

@@ -1,11 +1,11 @@
 use russh::keys::ssh_key::PublicKey;
-use russh::{client, ChannelId};
-use tauri::{AppHandle, Emitter};
-
-use super::types::SshDataPayload;
+use russh::client;
+use tauri::AppHandle;
 
 pub struct SshClient {
+    #[allow(dead_code)]
     app_handle: AppHandle,
+    #[allow(dead_code)]
     session_id: String,
 }
 
@@ -26,21 +26,10 @@ impl client::Handler for SshClient {
         _server_public_key: &PublicKey,
     ) -> Result<bool, Self::Error> {
         // TOFU (Trust On First Use) — accept all keys for now
-        // TODO: Implement known_hosts verification
         Ok(true)
     }
 
-    async fn data(
-        &mut self,
-        _channel: ChannelId,
-        data: &[u8],
-        _session: &mut client::Session,
-    ) -> Result<(), Self::Error> {
-        let payload = SshDataPayload {
-            session_id: self.session_id.clone(),
-            data: data.to_vec(),
-        };
-        let _ = self.app_handle.emit("ssh-data", &payload);
-        Ok(())
-    }
+    // data() is intentionally NOT implemented here.
+    // All SSH data is handled by channel_task in session.rs via ChannelMsg::Data.
+    // Implementing data() here would cause double-emit of ssh-data events.
 }

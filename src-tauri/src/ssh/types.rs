@@ -8,6 +8,11 @@ pub struct ConnectionConfig {
     pub port: u16,
     pub username: String,
     pub auth_method: AuthMethod,
+    pub startup_command: Option<String>,
+    pub jump_host: Option<String>,
+    pub jump_port: Option<u16>,
+    pub jump_username: Option<String>,
+    pub jump_auth_method: Option<AuthMethod>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -46,6 +51,11 @@ mod tests {
             auth_method: AuthMethod::Password {
                 password: "secret".to_string(),
             },
+            startup_command: None,
+            jump_host: None,
+            jump_port: None,
+            jump_username: None,
+            jump_auth_method: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         let deserialized: ConnectionConfig = serde_json::from_str(&json).unwrap();
@@ -63,6 +73,11 @@ mod tests {
                 key_path: "/home/user/.ssh/id_ed25519".to_string(),
                 passphrase: None,
             },
+            startup_command: None,
+            jump_host: None,
+            jump_port: None,
+            jump_username: None,
+            jump_auth_method: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         assert!(json.contains("privateKey"));

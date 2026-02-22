@@ -31,3 +31,6 @@ coverage/
 
 # pnpm
 .npmrc.tmp
+
+# Build number
+.build_number
