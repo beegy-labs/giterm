@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { isValidPort } from "@/shared/lib/constants";
 
 interface ValidationErrors {
   name?: string;
@@ -39,11 +40,8 @@ export function useConnectionValidation(
       }
     }
 
-    if (touched.port) {
-      const port = parseInt(params.port, 10);
-      if (isNaN(port) || port < 1 || port > 65535) {
-        errors.port = "Port: 1-65535";
-      }
+    if (touched.port && !isValidPort(params.port)) {
+      errors.port = "Port: 1-65535";
     }
 
     if (touched.username) {
@@ -56,9 +54,7 @@ export function useConnectionValidation(
       !!params.name.trim() &&
       !!params.host.trim() &&
       !!params.username.trim() &&
-      !isNaN(parseInt(params.port, 10)) &&
-      parseInt(params.port, 10) >= 1 &&
-      parseInt(params.port, 10) <= 65535 &&
+      isValidPort(params.port) &&
       Object.keys(errors).length === 0;
 
     return { errors, isValid };

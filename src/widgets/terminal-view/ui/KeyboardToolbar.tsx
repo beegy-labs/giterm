@@ -1,4 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect, useState, type RefObject } from "react";
+// triggerHitRegionRefresh intentionally NOT called on panel toggle:
+// - New panel row DOM nodes are registered at correct coords by iOS automatically
+// - Main row Y is unchanged (always last in DOM = always at screen bottom)
+// - Calling scrollTo(0,1) nudge induces 34px iOS form assistant bar oscillation
+//   (778↔744 --vvh swing) which shifts toolbar position and breaks hit-regions
+import { DevFrame } from "@/shared/ui/dev-frame";
 import {
   ArrowUp,
   ArrowDown,
@@ -7,13 +13,17 @@ import {
   Copy,
   ClipboardPaste,
   Delete,
+  Keyboard,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { ESC, ctrl } from "@/shared/lib/escapeSequences";
+import { ESC } from "@/shared/lib/escapeSequences";
+import { applyModifiers } from "@/shared/lib/terminalModifiers";
 
-const TMUX_PREFIX = ctrl("b"); // \x02
-const TAP_THRESHOLD = 10; // px — movement under this is a tap, above is scroll
+const TAP_THRESHOLD = 10; // px
+const TMUX = "\x02"; // Ctrl+B prefix
+
+type PanelId = "tmux" | "ctrl" | "fn";
 
 interface KeyboardToolbarProps {
   onKey: (value: string) => void;
@@ -25,11 +35,16 @@ interface KeyboardToolbarProps {
   onShiftToggle: () => void;
   onCopy: () => void;
   onPaste: () => void;
-  tmuxMode?: boolean;
-  onTmuxToggle?: () => void;
+  onScrollUp?: () => void;
+  onScrollDown?: () => void;
+  showKeyboard?: boolean;
+  onKeyboardToggle?: () => void;
+  composingText?: string;
 }
 
-/** Hook: distinguishes tap from scroll on touch devices */
+/**
+ * Distinguishes tap from horizontal scroll.
+ */
 function useTap(onTap: () => void) {
   const startRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -44,16 +59,20 @@ function useTap(onTap: () => void) {
       const t = e.changedTouches[0];
       startRef.current = null;
       if (!start || !t) return;
-      if (
-        Math.abs(t.clientX - start.x) < TAP_THRESHOLD &&
-        Math.abs(t.clientY - start.y) < TAP_THRESHOLD
-      ) {
+      const moved =
+        Math.abs(t.clientX - start.x) >= TAP_THRESHOLD ||
+        Math.abs(t.clientY - start.y) >= TAP_THRESHOLD;
+      if (!moved) {
         e.preventDefault();
         onTap();
       }
     },
     [onTap],
   );
+
+  const onTouchCancel = useCallback(() => {
+    startRef.current = null;
+  }, []);
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -63,29 +82,34 @@ function useTap(onTap: () => void) {
     [onTap],
   );
 
-  return { onTouchStart, onTouchEnd, onMouseDown };
+  return { onTouchStart, onTouchEnd, onTouchCancel, onMouseDown };
 }
 
-function ToolbarKey({
+function Key({
   label,
   value,
   icon,
+  active,
   onKey,
-  className: extraClass,
 }: {
   label?: string;
   value: string;
   icon?: React.ReactNode;
-  onKey: (value: string) => void;
-  className?: string;
+  active?: boolean;
+  onKey: (v: string) => void;
 }) {
   const tap = useTap(() => onKey(value));
   return (
     <button
       tabIndex={-1}
-      className={`flex shrink-0 min-h-[28px] items-center justify-center rounded-sm bg-accent px-2 py-1.5 text-xs font-medium text-foreground active:bg-accent/70 ${extraClass ?? ""}`}
+      className={`flex shrink-0 min-h-[30px] items-center justify-center rounded-sm px-2 py-1.5 text-xs font-medium ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-accent text-foreground active:bg-accent/70"
+      }`}
       onTouchStart={tap.onTouchStart}
       onTouchEnd={tap.onTouchEnd}
+      onTouchCancel={tap.onTouchCancel}
       onMouseDown={tap.onMouseDown}
     >
       {icon ?? label}
@@ -93,80 +117,206 @@ function ToolbarKey({
   );
 }
 
-function ModifierKey({
-  label,
-  isActive,
-  onToggle,
-}: {
-  label: string;
-  isActive: boolean;
-  onToggle: () => void;
-}) {
-  const tap = useTap(onToggle);
-  return (
-    <button
-      tabIndex={-1}
-      className={`flex shrink-0 min-h-[28px] items-center justify-center rounded-sm px-2.5 py-1.5 text-xs font-semibold ${
-        isActive
-          ? "bg-primary text-primary-foreground"
-          : "bg-accent text-foreground active:bg-accent/70"
-      }`}
-      onTouchStart={tap.onTouchStart}
-      onTouchEnd={tap.onTouchEnd}
-      onMouseDown={tap.onMouseDown}
-    >
-      {label}
-    </button>
-  );
+/**
+ * Programmatic horizontal scroll for iOS WKWebView.
+ * Uses native addEventListener + overflow-x:hidden (CSS clip, scrollLeft always writable).
+ */
+function useHorizontalScroll(ref: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startLeft = 0;
+    let tracking = false;
+
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startLeft = el.scrollLeft;
+      tracking = true;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (!tracking) return;
+      const t = e.touches[0];
+      if (!t) return;
+      el.scrollLeft = startLeft + (startX - t.clientX);
+    };
+
+    const onEnd = () => { tracking = false; };
+
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: true });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    el.addEventListener("touchcancel", onEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, [ref]);
 }
 
-function ActionButton({
-  icon,
-  onAction,
-}: {
-  icon: React.ReactNode;
-  onAction: () => void;
-}) {
-  const tap = useTap(onAction);
-  return (
-    <button
-      tabIndex={-1}
-      className="flex shrink-0 min-h-[28px] items-center justify-center rounded-sm bg-accent px-2 py-1.5 text-foreground active:bg-accent/70"
-      onTouchStart={tap.onTouchStart}
-      onTouchEnd={tap.onTouchEnd}
-      onMouseDown={tap.onMouseDown}
-    >
-      {icon}
-    </button>
-  );
+function Divider() {
+  return <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />;
 }
 
-function ExpandButton({
-  isOpen,
-  onToggle,
+// ---------------------------------------------------------------------------
+// Panel key definitions — only keys NOT on the standard iOS keyboard
+// ---------------------------------------------------------------------------
+
+/**
+ * Tmux panel: auto-prepends Ctrl+B prefix.
+ * Removed window numbers 0-4 — they're on the iOS keyboard.
+ */
+const TMUX_KEYS: { label: string; value: string }[] = [
+  // Windows
+  { label: "+",     value: TMUX + "c" },  // new window
+  { label: "n",     value: TMUX + "n" },  // next window
+  { label: "p",     value: TMUX + "p" },  // previous window
+  { label: "l",     value: TMUX + "l" },  // last window
+  // Panes
+  { label: "V|",    value: TMUX + "%" },  // vertical split
+  { label: "H—",    value: TMUX + '"' },  // horizontal split
+  { label: "z",     value: TMUX + "z" },  // zoom pane
+  { label: "o",     value: TMUX + "o" },  // cycle pane
+  { label: "x",     value: TMUX + "x" },  // close pane
+  // Misc
+  { label: "d",     value: TMUX + "d" },  // detach
+  { label: ":",     value: TMUX + ":" },  // command prompt
+];
+
+/**
+ * Ctrl shortcuts panel: one-tap common Ctrl combos.
+ * These require the Ctrl modifier which is absent from the iOS keyboard.
+ * Replaces the Vi panel — h/j/k/l/etc. are just letters already on iOS keyboard.
+ */
+const CTRL_KEYS: { label: string; value: string; note: string }[] = [
+  { label: "^C", value: "\x03", note: "interrupt" },
+  { label: "^D", value: "\x04", note: "EOF/logout" },
+  { label: "^Z", value: "\x1A", note: "suspend" },
+  { label: "^L", value: "\x0C", note: "clear" },
+  { label: "^A", value: "\x01", note: "line start" },
+  { label: "^E", value: "\x05", note: "line end" },
+  { label: "^R", value: "\x12", note: "history" },
+  { label: "^W", value: "\x17", note: "del word" },
+  { label: "^U", value: "\x15", note: "del line" },
+  { label: "^K", value: "\x0B", note: "del to end" },
+];
+
+const FN_KEYS: { label: string; value: string }[] = [
+  { label: "F1",  value: ESC.f1  },
+  { label: "F2",  value: ESC.f2  },
+  { label: "F3",  value: ESC.f3  },
+  { label: "F4",  value: ESC.f4  },
+  { label: "F5",  value: ESC.f5  },
+  { label: "F6",  value: ESC.f6  },
+  { label: "F7",  value: ESC.f7  },
+  { label: "F8",  value: ESC.f8  },
+  { label: "F9",  value: ESC.f9  },
+  { label: "F10", value: ESC.f10 },
+  { label: "F11", value: ESC.f11 },
+  { label: "F12", value: ESC.f12 },
+];
+
+function panelKeys(panel: PanelId): { label: string; value: string }[] {
+  if (panel === "tmux") return TMUX_KEYS;
+  if (panel === "ctrl") return CTRL_KEYS;
+  return FN_KEYS;
+}
+
+// ---------------------------------------------------------------------------
+// Panel rows (rendered ABOVE main row — iOS hit-region rule)
+// ---------------------------------------------------------------------------
+
+function PanelContentRow({
+  panel,
+  onKey,
+  onScrollUp,
+  onScrollDown,
 }: {
-  isOpen: boolean;
-  onToggle: () => void;
+  panel: PanelId;
+  onKey: (v: string) => void;
+  onScrollUp?: () => void;
+  onScrollDown?: () => void;
 }) {
-  const tap = useTap(onToggle);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useHorizontalScroll(scrollRef);
+  // Always call useTap unconditionally (hooks rule); fallback is a no-op
+  const upTap = useTap(onScrollUp ?? (() => {}));
+  const downTap = useTap(onScrollDown ?? (() => {}));
+
   return (
-    <button
-      tabIndex={-1}
-      className="flex shrink-0 min-h-[28px] items-center justify-center rounded-sm bg-accent px-1.5 py-1.5 text-foreground active:bg-accent/70"
-      onTouchStart={tap.onTouchStart}
-      onTouchEnd={tap.onTouchEnd}
-      onMouseDown={tap.onMouseDown}
+    <div
+      ref={scrollRef}
+      className="flex items-center gap-1 overflow-x-hidden border-b border-border px-2 py-1.5 [touch-action:none]"
     >
-      {isOpen ? (
-        <ChevronDown className="size-3.5" />
-      ) : (
-        <ChevronUp className="size-3.5" />
+      {panel === "tmux" && (
+        <>
+          <button
+            tabIndex={-1}
+            className="flex shrink-0 min-h-[30px] items-center justify-center rounded-sm px-2 py-1.5 text-xs font-medium bg-accent text-foreground active:bg-accent/70"
+            {...upTap}
+          >
+            <ArrowUp className="size-3.5" />
+          </button>
+          <button
+            tabIndex={-1}
+            className="flex shrink-0 min-h-[30px] items-center justify-center rounded-sm px-2 py-1.5 text-xs font-medium bg-accent text-foreground active:bg-accent/70"
+            {...downTap}
+          >
+            <ArrowDown className="size-3.5" />
+          </button>
+          <Divider />
+        </>
       )}
-    </button>
+      {panelKeys(panel).map((k) => (
+        <Key key={k.label} label={k.label} value={k.value} onKey={onKey} />
+      ))}
+    </div>
   );
 }
 
-type ExpandedPanel = "none" | "tmux" | "vi" | "fkeys";
+function PanelSelectorRow({
+  activePanel,
+  onSelect,
+}: {
+  activePanel: PanelId;
+  onSelect: (p: PanelId) => void;
+}) {
+  const PANELS: { id: PanelId; label: string }[] = [
+    { id: "tmux", label: "Tmux" },
+    { id: "ctrl", label: "Ctrl" },
+    { id: "fn",   label: "Fn"   },
+  ];
+  return (
+    <div className="flex items-center gap-1 border-b border-border px-2 py-1">
+      {PANELS.map(({ id, label }) => (
+        <button
+          key={id}
+          tabIndex={-1}
+          className={`flex shrink-0 min-h-[26px] items-center justify-center rounded-sm px-3 py-0.5 text-xs font-medium [touch-action:manipulation] ${
+            id === activePanel
+              ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+              : "bg-accent text-muted-foreground active:bg-accent/70"
+          }`}
+          onMouseDown={(e) => { e.preventDefault(); onSelect(id); }}
+          onTouchEnd={(e) => { e.preventDefault(); onSelect(id); }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
 
 export function KeyboardToolbar({
   onKey,
@@ -178,168 +328,153 @@ export function KeyboardToolbar({
   onShiftToggle,
   onCopy,
   onPaste,
-  tmuxMode,
-  onTmuxToggle,
+  onScrollUp,
+  onScrollDown,
+  showKeyboard,
+  onKeyboardToggle,
+  composingText = "",
 }: KeyboardToolbarProps) {
-  const [panel, setPanel] = useState<ExpandedPanel>("none");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useHorizontalScroll(scrollRef);
 
-  const handleKey = (value: string) => {
-    if (isCtrlActive && value.length === 1) {
-      const code = value.toUpperCase().charCodeAt(0);
-      if (code >= 65 && code <= 90) {
-        onKey(String.fromCharCode(code - 64));
-        onCtrlToggle();
-        return;
-      }
+  const [activePanel, setActivePanel] = useState<PanelId | null>(null);
+  const lastPanelRef = useRef<PanelId>("tmux");
+
+  const togglePanel = useCallback(() => {
+    setActivePanel((prev) =>
+      prev === null ? lastPanelRef.current : null,
+    );
+  }, []);
+
+  const selectPanel = useCallback((p: PanelId) => {
+    lastPanelRef.current = p;
+    setActivePanel(p);
+  }, []);
+
+  const send = (value: string) => {
+    const { output, consumed } = applyModifiers(value, {
+      ctrl: isCtrlActive,
+      alt: isAltActive,
+      shift: isShiftActive,
+    });
+    onKey(output);
+    for (const mod of consumed) {
+      if (mod === "ctrl") onCtrlToggle();
+      if (mod === "alt") onAltToggle();
+      if (mod === "shift") onShiftToggle();
     }
-    if (isAltActive) {
-      onKey("\x1B" + value);
-      onAltToggle();
-      return;
-    }
-    if (isShiftActive && value.length === 1) {
-      onKey(value.toUpperCase());
-      onShiftToggle();
-      return;
-    }
-    onKey(value);
   };
 
-  const togglePanel = (target: ExpandedPanel) =>
-    setPanel((p) => (p === target ? "none" : target));
-
-  const tmuxKey = (key: string) => onKey(TMUX_PREFIX + key);
-
   return (
-    <div className="shrink-0 border-t border-border bg-card pb-[max(env(safe-area-inset-bottom),8px)]">
-      {/* Main row */}
-      <div className="flex items-center gap-1 overflow-x-auto px-2 py-1.5">
-        <ModifierKey label="Ctrl" isActive={isCtrlActive} onToggle={onCtrlToggle} />
-        <ModifierKey label="Alt" isActive={isAltActive} onToggle={onAltToggle} />
+    <DevFrame
+      name="KeyboardToolbar"
+      className="shrink-0 border-t border-border pb-[var(--vvh-safe-bottom,34px)]"
+      style={{
+        background:
+          "linear-gradient(to bottom, var(--card) calc(100% - var(--vvh-safe-bottom, 34px)), var(--background) calc(100% - var(--vvh-safe-bottom, 34px)))",
+      }}
+    >
+      {/*
+       * iOS WKWebView hit-region rule:
+       * Expandable rows ABOVE main row in DOM → main row Y never changes.
+       * New DOM nodes register at correct coords automatically (no refresh needed).
+       */}
 
-        <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-
-        <ToolbarKey value={ESC.arrowLeft} icon={<ArrowLeft className="size-3.5" />} onKey={handleKey} />
-        <ToolbarKey value={ESC.arrowUp} icon={<ArrowUp className="size-3.5" />} onKey={handleKey} />
-        <ToolbarKey value={ESC.arrowDown} icon={<ArrowDown className="size-3.5" />} onKey={handleKey} />
-        <ToolbarKey value={ESC.arrowRight} icon={<ArrowRight className="size-3.5" />} onKey={handleKey} />
-
-        <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-
-        <ToolbarKey label="ESC" value={ESC.escape} onKey={handleKey} />
-        <ToolbarKey label="Tab" value={ESC.tab} onKey={handleKey} />
-        <ToolbarKey value={ESC.backspace} icon={<Delete className="size-3.5" />} onKey={handleKey} />
-
-        <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-
-        {onTmuxToggle && (
-          <ModifierKey label="Tmux" isActive={!!tmuxMode} onToggle={onTmuxToggle} />
-        )}
-        <ActionButton icon={<Copy className="size-3.5" />} onAction={onCopy} />
-        <ActionButton icon={<ClipboardPaste className="size-3.5" />} onAction={onPaste} />
-
-        <ExpandButton
-          isOpen={panel !== "none"}
-          onToggle={() => togglePanel(panel === "none" ? "tmux" : "none")}
+      {activePanel !== null && (
+        <PanelContentRow
+          panel={activePanel}
+          onKey={onKey}
+          onScrollUp={onScrollUp}
+          onScrollDown={onScrollDown}
         />
+      )}
+
+      {activePanel !== null && (
+        <PanelSelectorRow activePanel={activePanel} onSelect={selectPanel} />
+      )}
+
+      {/* Main row — always last = always at same Y */}
+      <div className="flex items-center gap-1 px-2 py-1.5">
+        {onKeyboardToggle && (
+          <button
+            tabIndex={-1}
+            className={`flex shrink-0 min-h-[30px] min-w-[36px] items-center justify-center rounded-sm px-2 py-1.5 text-sm font-medium [touch-action:manipulation] ${
+              showKeyboard
+                ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+                : "bg-accent text-muted-foreground active:bg-accent/70"
+            }`}
+            onMouseDown={(e) => { e.preventDefault(); onKeyboardToggle(); }}
+            onTouchEnd={(e) => { e.preventDefault(); onKeyboardToggle(); }}
+          >
+            {composingText ? (
+              composingText
+            ) : showKeyboard ? (
+              <span className="opacity-40">가</span>
+            ) : (
+              <Keyboard className="size-3.5" />
+            )}
+          </button>
+        )}
+
+        {/* Scrollable middle — overflow-x:hidden + touch-action:none for iOS */}
+        <div
+          ref={scrollRef}
+          className="flex flex-1 min-w-0 items-center gap-1 overflow-x-hidden [touch-action:none]"
+        >
+          <Key label="Ctrl" value="" active={isCtrlActive} onKey={onCtrlToggle} />
+          <Key label="Alt"  value="" active={isAltActive}  onKey={onAltToggle}  />
+          <Key label="⇧"   value="" active={isShiftActive} onKey={onShiftToggle} />
+
+          <Divider />
+
+          <Key value={ESC.arrowLeft}  icon={<ArrowLeft  className="size-3.5" />} onKey={send} />
+          <Key value={ESC.arrowUp}    icon={<ArrowUp    className="size-3.5" />} onKey={send} />
+          <Key value={ESC.arrowDown}  icon={<ArrowDown  className="size-3.5" />} onKey={send} />
+          <Key value={ESC.arrowRight} icon={<ArrowRight className="size-3.5" />} onKey={send} />
+
+          <Divider />
+
+          <Key label="ESC" value={ESC.escape}    onKey={send} />
+          <Key label="Tab" value={ESC.tab}       onKey={send} />
+          <Key value={ESC.backspace} icon={<Delete className="size-3.5" />} onKey={send} />
+
+          <Divider />
+
+          {/* Buried symbols — require 3 taps on iOS keyboard (#+=  layer) */}
+          <Key label="|"  value="|"  onKey={send} />
+          <Key label="~"  value="~"  onKey={send} />
+          <Key label="`"  value="`"  onKey={send} />
+          <Key label="\"  value="\"  onKey={send} />
+
+          <Divider />
+
+          <Key label="PgU" value={ESC.pageUp}   onKey={send} />
+          <Key label="PgD" value={ESC.pageDown} onKey={send} />
+
+          <Divider />
+
+          <Key value="" icon={<Copy          className="size-3.5" />} onKey={() => onCopy()}  />
+          <Key value="" icon={<ClipboardPaste className="size-3.5" />} onKey={() => onPaste()} />
+        </div>
+
+        {/* Panel expand/collapse */}
+        <button
+          tabIndex={-1}
+          className={`flex shrink-0 min-h-[30px] min-w-[30px] items-center justify-center rounded-sm px-1.5 py-1.5 [touch-action:manipulation] ${
+            activePanel !== null
+              ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+              : "bg-accent text-muted-foreground active:bg-accent/70"
+          }`}
+          onMouseDown={(e) => { e.preventDefault(); togglePanel(); }}
+          onTouchEnd={(e) => { e.preventDefault(); togglePanel(); }}
+        >
+          {activePanel !== null ? (
+            <ChevronDown className="size-3.5" />
+          ) : (
+            <ChevronUp className="size-3.5" />
+          )}
+        </button>
       </div>
-
-      {/* Panel selector tabs */}
-      {panel !== "none" && (
-        <div className="flex items-center gap-1 px-2 pb-1">
-          <ModifierKey label="Tmux" isActive={panel === "tmux"} onToggle={() => togglePanel("tmux")} />
-          <ModifierKey label="Vi" isActive={panel === "vi"} onToggle={() => togglePanel("vi")} />
-          <ModifierKey label="Fn" isActive={panel === "fkeys"} onToggle={() => togglePanel("fkeys")} />
-
-          <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-
-          <ModifierKey label="⇧" isActive={isShiftActive} onToggle={onShiftToggle} />
-          <ToolbarKey label="Del" value={ESC.delete} onKey={handleKey} />
-          <ToolbarKey label="Home" value={ESC.home} onKey={handleKey} />
-          <ToolbarKey label="End" value={ESC.end} onKey={handleKey} />
-          <ToolbarKey label="PgUp" value={ESC.pageUp} onKey={handleKey} />
-          <ToolbarKey label="PgDn" value={ESC.pageDown} onKey={handleKey} />
-        </div>
-      )}
-
-      {/* Tmux panel */}
-      {panel === "tmux" && (
-        <>
-          {/* Windows */}
-          <div className="flex items-center gap-1 overflow-x-auto px-2 pb-1">
-            <span className="shrink-0 text-[10px] text-muted-foreground">Win</span>
-            <ToolbarKey label="+New" value="" onKey={() => tmuxKey("c")} />
-            <ToolbarKey label="Prev" value="" onKey={() => tmuxKey("p")} />
-            <ToolbarKey label="Next" value="" onKey={() => tmuxKey("n")} />
-            <ToolbarKey label="List" value="" onKey={() => tmuxKey("w")} />
-            <ToolbarKey label="Last" value="" onKey={() => tmuxKey("l")} />
-            {[0, 1, 2, 3, 4].map((n) => (
-              <ToolbarKey key={n} label={String(n)} value="" onKey={() => tmuxKey(String(n))} />
-            ))}
-          </div>
-          {/* Panes */}
-          <div className="flex items-center gap-1 overflow-x-auto px-2 pb-1">
-            <span className="shrink-0 text-[10px] text-muted-foreground">Pane</span>
-            <ToolbarKey label="V|" value="" onKey={() => tmuxKey("%")} />
-            <ToolbarKey label="H—" value="" onKey={() => tmuxKey('"')} />
-            <ToolbarKey label="Zoom" value="" onKey={() => tmuxKey("z")} />
-            <ToolbarKey label="Cycle" value="" onKey={() => tmuxKey("o")} />
-            <ToolbarKey label="Close" value="" onKey={() => tmuxKey("x")} />
-            <ToolbarKey label="→Win" value="" onKey={() => tmuxKey("!")} />
-            <ToolbarKey label="Layout" value="" onKey={() => tmuxKey(" ")} />
-          </div>
-          {/* Session + Copy */}
-          <div className="flex items-center gap-1 overflow-x-auto px-2 pb-1">
-            <span className="shrink-0 text-[10px] text-muted-foreground">Etc</span>
-            <ToolbarKey label="Detach" value="" onKey={() => tmuxKey("d")} />
-            <ToolbarKey label="Sess" value="" onKey={() => tmuxKey("s")} />
-            <ToolbarKey label="Cmd" value="" onKey={() => tmuxKey(":")} />
-            <ToolbarKey label="Keys" value="" onKey={() => tmuxKey("?")} />
-
-            <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-
-            <ToolbarKey label="Copy" value="" onKey={() => tmuxKey("[")} />
-            <ToolbarKey label="Paste" value="" onKey={() => tmuxKey("]")} />
-            <ToolbarKey label="⇞" value="" onKey={() => tmuxKey(ESC.pageUp)} />
-          </div>
-        </>
-      )}
-
-      {/* Vi panel */}
-      {panel === "vi" && (
-        <div className="flex items-center gap-1 px-2 pb-1">
-          {[
-            { label: "h", value: "h" },
-            { label: "j", value: "j" },
-            { label: "k", value: "k" },
-            { label: "l", value: "l" },
-            { label: "w", value: "w" },
-            { label: "b", value: "b" },
-            { label: "0", value: "0" },
-            { label: "$", value: "$" },
-            { label: "g", value: "g" },
-            { label: "G", value: "G" },
-            { label: "/", value: "/" },
-            { label: "n", value: "n" },
-            { label: "q", value: "q" },
-          ].map((vk) => (
-            <ToolbarKey key={vk.label} label={vk.label} value={vk.value} onKey={(v) => onKey(v)} />
-          ))}
-        </div>
-      )}
-
-      {/* Function keys panel */}
-      {panel === "fkeys" && (
-        <div className="flex items-center gap-1 overflow-x-auto px-2 pb-1">
-          {([
-            ["F1", ESC.f1], ["F2", ESC.f2], ["F3", ESC.f3], ["F4", ESC.f4],
-            ["F5", ESC.f5], ["F6", ESC.f6], ["F7", ESC.f7], ["F8", ESC.f8],
-            ["F9", ESC.f9], ["F10", ESC.f10], ["F11", ESC.f11], ["F12", ESC.f12],
-          ] as const).map(([label, value]) => (
-            <ToolbarKey key={label} label={label} value={value} onKey={handleKey} />
-          ))}
-        </div>
-      )}
-    </div>
+    </DevFrame>
   );
 }

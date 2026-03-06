@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Plus, Trash2, Circle } from "lucide-react";
 import {
   Dialog,
@@ -10,7 +10,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { useTunnelStore, type TunnelConfig } from "@/entities/tunnel";
-import { useSessionStore } from "@/entities/session";
+import { useSessionStore, selectActiveSession } from "@/entities/session";
+import { isValidPort } from "@/shared/lib/constants";
 import { tunnelStart, tunnelStop } from "../adapters/api/tunnelApi";
 
 interface TunnelDialogProps {
@@ -19,7 +20,7 @@ interface TunnelDialogProps {
 }
 
 export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
-  const activeSession = useSessionStore((s) => s.activeSession);
+  const activeSession = useSessionStore(selectActiveSession);
   const tunnels = useTunnelStore((s) => s.tunnels);
   const addTunnel = useTunnelStore((s) => s.addTunnel);
   const removeTunnel = useTunnelStore((s) => s.removeTunnel);
@@ -35,7 +36,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
     (t) => t.sessionId === activeSession?.sessionId,
   );
 
-  const handleAdd = useCallback(async () => {
+  const handleAdd = async () => {
     if (!activeSession?.sessionId) return;
     setError("");
 
@@ -43,7 +44,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
     const lp = parseInt(localPort, 10);
     const rp = parseInt(remotePort, 10);
 
-    if (!lp || !rp) {
+    if (!isValidPort(lp) || !isValidPort(rp)) {
       setError("Invalid port numbers");
       return;
     }
@@ -59,7 +60,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
 
       addTunnel({
         id: tunnelId,
-        name: name || `${lp} -> ${remoteHost}:${rp}`,
+        name: name || `Tunnel ${lp}`,
         connectionId: activeSession.connectionId,
         sessionId: activeSession.sessionId,
         localPort: lp,
@@ -74,46 +75,40 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
     } catch (err) {
       setError(String(err));
     }
-  }, [activeSession, name, localPort, remoteHost, remotePort, addTunnel]);
+  };
 
-  const handleRemove = useCallback(
-    async (tunnel: TunnelConfig) => {
+  const handleRemove = async (tunnel: TunnelConfig) => {
+    try {
+      await tunnelStop(tunnel.id);
+    } catch {
+      // ignore errors on stop
+    }
+    removeTunnel(tunnel.id);
+  };
+
+  const handleToggle = async (tunnel: TunnelConfig) => {
+    if (tunnel.status === "active") {
       try {
         await tunnelStop(tunnel.id);
-      } catch {
-        // ignore errors on stop
+        updateTunnel(tunnel.id, { status: "stopped" });
+      } catch (err) {
+        updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
-      removeTunnel(tunnel.id);
-    },
-    [removeTunnel],
-  );
-
-  const handleToggle = useCallback(
-    async (tunnel: TunnelConfig) => {
-      if (tunnel.status === "active") {
-        try {
-          await tunnelStop(tunnel.id);
-          updateTunnel(tunnel.id, { status: "stopped" });
-        } catch (err) {
-          updateTunnel(tunnel.id, { status: "error", error: String(err) });
-        }
-      } else {
-        try {
-          await tunnelStart(
-            tunnel.id,
-            tunnel.sessionId,
-            tunnel.localPort,
-            tunnel.remoteHost,
-            tunnel.remotePort,
-          );
-          updateTunnel(tunnel.id, { status: "active", error: undefined });
-        } catch (err) {
-          updateTunnel(tunnel.id, { status: "error", error: String(err) });
-        }
+    } else {
+      try {
+        await tunnelStart(
+          tunnel.id,
+          tunnel.sessionId,
+          tunnel.localPort,
+          tunnel.remoteHost,
+          tunnel.remotePort,
+        );
+        updateTunnel(tunnel.id, { status: "active", error: undefined });
+      } catch (err) {
+        updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
-    },
-    [updateTunnel],
-  );
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,7 +124,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
                 key={tunnel.id}
                 className="flex items-center gap-2 rounded-sm border border-border p-2 text-xs"
               >
-                <button onClick={() => handleToggle(tunnel)}>
+                <button type="button" onClick={() => handleToggle(tunnel)}>
                   <Circle
                     className={`size-3 ${
                       tunnel.status === "active"
@@ -141,10 +136,10 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
                   />
                 </button>
                 <span className="flex-1 truncate">
-                  {tunnel.name} ({tunnel.localPort} -{">"}{" "}
-                  {tunnel.remoteHost}:{tunnel.remotePort})
+                  {tunnel.name} (:{tunnel.localPort})
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleRemove(tunnel)}
                   className="flex size-5 items-center justify-center rounded-sm hover:bg-destructive/10"
                 >

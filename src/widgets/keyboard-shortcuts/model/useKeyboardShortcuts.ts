@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import { useSessionStore } from "@/entities/session";
-import { useConnectDialogStore } from "@/features/ssh-connect";
-import { useTerminalSettingsStore } from "@/entities/session/model/terminalSettingsStore";
-import { sshDisconnect } from "@/features/ssh-connect";
+import { useSessionStore, selectActiveSession } from "@/entities/session";
+import { useConnectDialogStore, closeSession } from "@/features/ssh-connect";
+import { useTerminalSettingsStore } from "@/entities/session";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -20,12 +19,9 @@ export function useKeyboardShortcuts() {
       // Mod+W — close current tab
       if (e.key === "w") {
         e.preventDefault();
-        const session = useSessionStore.getState().activeSession;
+        const session = selectActiveSession(useSessionStore.getState());
         if (session) {
-          if (session.status === "connected") {
-            sshDisconnect(session.sessionId).catch(console.error);
-          }
-          useSessionStore.getState().removeSession(session.sessionId);
+          closeSession(session.sessionId);
         }
         return;
       }

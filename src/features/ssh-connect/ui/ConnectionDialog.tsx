@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Loader2,
   CheckCircle2,
@@ -25,13 +25,11 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { useConnectionStore, type AuthMethod } from "@/entities/connection";
-import { useConnectDialogStore } from "@/features/ssh-connect/model/connectStore";
-import { useConnect } from "@/features/ssh-connect/model/useConnect";
-import { useConnectionValidation } from "@/features/ssh-connect/model/useConnectionValidation";
-import {
-  sshTestConnection,
-  classifySshError,
-} from "@/features/ssh-connect/adapters/api/sshApi";
+import { isValidPort } from "@/shared/lib/constants";
+import { useConnectDialogStore } from "../model/connectStore";
+import { useConnect } from "../model/useConnect";
+import { useConnectionValidation } from "../model/useConnectionValidation";
+import { sshTestConnection, classifySshError } from "../adapters/api/sshApi";
 
 type TestStatus = "idle" | "testing" | "success" | "failed";
 
@@ -71,6 +69,161 @@ function PasswordInput({
   );
 }
 
+interface AuthMethodFieldsProps {
+  authMethod: AuthMethod;
+  onAuthMethodChange: (v: AuthMethod) => void;
+  password: string;
+  onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  keyPath: string;
+  onKeyPathChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  passphrase: string;
+  onPassphraseChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  idPrefix: string;
+  labelClassName?: string;
+}
+
+function AuthMethodFields({
+  authMethod,
+  onAuthMethodChange,
+  password,
+  onPasswordChange,
+  keyPath,
+  onKeyPathChange,
+  passphrase,
+  onPassphraseChange,
+  idPrefix,
+  labelClassName = "pt-2 text-right",
+}: AuthMethodFieldsProps) {
+  return (
+    <>
+      <div className="grid grid-cols-4 items-start gap-4">
+        <Label className={labelClassName}>Auth</Label>
+        <Select
+          value={authMethod}
+          onValueChange={(v) => onAuthMethodChange(v as AuthMethod)}
+        >
+          <SelectTrigger className="col-span-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="password">Password</SelectItem>
+            <SelectItem value="private-key">Private Key</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {authMethod === "password" ? (
+        <div className="grid grid-cols-4 items-start gap-4">
+          <Label htmlFor={`${idPrefix}Password`} className={labelClassName}>
+            Password
+          </Label>
+          <PasswordInput
+            id={`${idPrefix}Password`}
+            value={password}
+            onChange={onPasswordChange}
+            className="col-span-3"
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor={`${idPrefix}KeyPath`} className={labelClassName}>
+              Key Path
+            </Label>
+            <Input
+              id={`${idPrefix}KeyPath`}
+              value={keyPath}
+              onChange={onKeyPathChange}
+              placeholder="~/.ssh/id_ed25519"
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor={`${idPrefix}Passphrase`} className={labelClassName}>
+              Passphrase
+            </Label>
+            <PasswordInput
+              id={`${idPrefix}Passphrase`}
+              value={passphrase}
+              onChange={onPassphraseChange}
+              placeholder="Optional"
+              className="col-span-3"
+            />
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+interface ConnectionConfigParams {
+  name: string;
+  host: string;
+  port: string;
+  username: string;
+  authMethod: AuthMethod;
+  password: string;
+  keyPath: string;
+  passphrase: string;
+  startupCommand: string;
+  filterAuth: boolean;
+}
+
+interface JumpHostConfigParams {
+  showJumpHost: boolean;
+  jumpHost: string;
+  jumpPort: string;
+  jumpUsername: string;
+  jumpAuthMethod: AuthMethod;
+  jumpPassword: string;
+  jumpKeyPath: string;
+  jumpPassphrase: string;
+}
+
+function buildConnectionConfig(
+  params: ConnectionConfigParams,
+  jump: JumpHostConfigParams,
+) {
+  const portNum = parseInt(params.port, 10);
+  const filterAuth = params.filterAuth;
+
+  const authField = (value: string | undefined, requiredFor: AuthMethod) =>
+    filterAuth && params.authMethod !== requiredFor ? undefined : value;
+
+  const base = {
+    name: params.name,
+    host: params.host,
+    port: portNum,
+    username: params.username,
+    authMethod: params.authMethod,
+    password: authField(params.password, "password"),
+    keyPath: authField(params.keyPath, "private-key"),
+    passphrase: authField(params.passphrase, "private-key"),
+    startupCommand: params.startupCommand || undefined,
+  };
+
+  if (!jump.showJumpHost || !jump.jumpHost) {
+    return base;
+  }
+
+  const jumpPortNum = parseInt(jump.jumpPort, 10);
+  if (!isValidPort(jumpPortNum)) {
+    return { ...base, jumpHost: undefined };
+  }
+  return {
+    ...base,
+    jumpHost: jump.jumpHost,
+    jumpPort: jumpPortNum,
+    jumpUsername: jump.jumpUsername || undefined,
+    jumpAuthMethod: jump.jumpAuthMethod,
+    jumpPassword:
+      jump.jumpAuthMethod === "password" ? jump.jumpPassword : undefined,
+    jumpKeyPath:
+      jump.jumpAuthMethod === "private-key" ? jump.jumpKeyPath : undefined,
+    jumpPassphrase:
+      jump.jumpAuthMethod === "private-key" ? jump.jumpPassphrase : undefined,
+  };
+}
+
 export function ConnectionDialog() {
   const open = useConnectDialogStore((s) => s.open);
   const setOpen = useConnectDialogStore((s) => s.setOpen);
@@ -101,10 +254,8 @@ export function ConnectionDialog() {
   const [testError, setTestError] = useState("");
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const markTouched = useCallback(
-    (field: string) => setTouched((p) => ({ ...p, [field]: true })),
-    [],
-  );
+  const markTouched = (field: string) =>
+    setTouched((p) => ({ ...p, [field]: true }));
 
   const { errors, isValid } = useConnectionValidation(
     { name, host, port, username },
@@ -137,38 +288,47 @@ export function ConnectionDialog() {
     }
   }, [editingConnection]);
 
-  const buildConfig = () => ({
-    id: editingConnection?.id ?? "test",
-    name: name || "Test",
-    host,
-    port: parseInt(port, 10),
-    username,
-    authMethod,
-    password: authMethod === "password" ? password : undefined,
-    keyPath: authMethod === "private-key" ? keyPath : undefined,
-    passphrase: authMethod === "private-key" ? passphrase : undefined,
-    startupCommand: startupCommand || undefined,
-    ...(showJumpHost && jumpHost
-      ? {
-          jumpHost,
-          jumpPort: parseInt(jumpPort, 10),
-          jumpUsername: jumpUsername || undefined,
-          jumpAuthMethod,
-          jumpPassword:
-            jumpAuthMethod === "password" ? jumpPassword : undefined,
-          jumpKeyPath:
-            jumpAuthMethod === "private-key" ? jumpKeyPath : undefined,
-          jumpPassphrase:
-            jumpAuthMethod === "private-key" ? jumpPassphrase : undefined,
-        }
-      : {}),
-  });
+  const jumpParams: JumpHostConfigParams = {
+    showJumpHost,
+    jumpHost,
+    jumpPort,
+    jumpUsername,
+    jumpAuthMethod,
+    jumpPassword,
+    jumpKeyPath,
+    jumpPassphrase,
+  };
+
+  const validateJumpPort = (): boolean => {
+    if (!showJumpHost || !jumpHost) return true;
+    if (!isValidPort(jumpPort)) {
+      setError("Jump host port must be between 1 and 65535");
+      return false;
+    }
+    return true;
+  };
 
   const handleTest = async () => {
+    if (!validateJumpPort()) return;
     setTestStatus("testing");
     setTestError("");
     try {
-      await sshTestConnection(buildConfig());
+      const config = buildConnectionConfig(
+        {
+          name: name || "Test",
+          host,
+          port,
+          username,
+          authMethod,
+          password,
+          keyPath,
+          passphrase,
+          startupCommand,
+          filterAuth: true,
+        },
+        jumpParams,
+      );
+      await sshTestConnection({ id: editingConnection?.id ?? "test", ...config });
       setTestStatus("success");
     } catch (err) {
       setTestStatus("failed");
@@ -177,59 +337,56 @@ export function ConnectionDialog() {
   };
 
   const handleConnect = () => {
-    connect({
-      name,
-      host,
-      port: parseInt(port, 10),
-      username,
-      authMethod,
-      password,
-      keyPath,
-      passphrase,
-      startupCommand,
-      ...(showJumpHost && jumpHost
-        ? {
-            jumpHost,
-            jumpPort: parseInt(jumpPort, 10),
-            jumpUsername,
-            jumpAuthMethod,
-            jumpPassword,
-            jumpKeyPath,
-            jumpPassphrase,
-          }
-        : {}),
-    });
+    if (!validateJumpPort()) return;
+    connect(buildConnectionConfig(
+      {
+        name,
+        host,
+        port,
+        username,
+        authMethod,
+        password,
+        keyPath,
+        passphrase,
+        startupCommand,
+        filterAuth: false,
+      },
+      jumpParams,
+    ));
   };
 
   const handleSave = () => {
     if (!editingConnection) return;
-    updateConnection(editingConnection.id, {
-      name,
-      host,
-      port: parseInt(port, 10),
-      username,
-      authMethod,
-      password: authMethod === "password" ? password : undefined,
-      keyPath: authMethod === "private-key" ? keyPath : undefined,
-      passphrase: authMethod === "private-key" ? passphrase : undefined,
-      startupCommand: startupCommand || undefined,
-      jumpHost: showJumpHost ? jumpHost || undefined : undefined,
-      jumpPort: showJumpHost ? parseInt(jumpPort, 10) : undefined,
-      jumpUsername: showJumpHost ? jumpUsername || undefined : undefined,
-      jumpAuthMethod: showJumpHost ? jumpAuthMethod : undefined,
-      jumpPassword:
-        showJumpHost && jumpAuthMethod === "password"
-          ? jumpPassword
-          : undefined,
-      jumpKeyPath:
-        showJumpHost && jumpAuthMethod === "private-key"
-          ? jumpKeyPath
-          : undefined,
-      jumpPassphrase:
-        showJumpHost && jumpAuthMethod === "private-key"
-          ? jumpPassphrase
-          : undefined,
-    });
+    if (!validateJumpPort()) return;
+    const config = buildConnectionConfig(
+      {
+        name,
+        host,
+        port,
+        username,
+        authMethod,
+        password,
+        keyPath,
+        passphrase,
+        startupCommand,
+        filterAuth: true,
+      },
+      jumpParams,
+    );
+    // Explicitly set jump fields to undefined when jump host is hidden (for clearing saved values)
+    const saveData = showJumpHost
+      ? config
+      : {
+          ...config,
+          jumpHost: undefined,
+          jumpPort: undefined,
+          jumpUsername: undefined,
+          jumpAuthMethod: undefined,
+          jumpPassword: undefined,
+          jumpKeyPath: undefined,
+          jumpPassphrase: undefined,
+        };
+    updateConnection(editingConnection.id, saveData);
     setOpen(false);
   };
 
@@ -264,13 +421,13 @@ export function ConnectionDialog() {
         if (!v) resetForm();
       }}
     >
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-md">
+      <DialogContent className="flex max-h-[85%] flex-col sm:max-w-md">
         <DialogHeader className="shrink-0">
           <DialogTitle>
             {isEditing ? "Edit Connection" : "New Connection"}
           </DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y]">
           <div className="grid gap-4">
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="name" className="pt-2 text-right">
@@ -340,61 +497,17 @@ export function ConnectionDialog() {
               )}
             </div>
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label className="pt-2 text-right">Auth</Label>
-            <Select
-              value={authMethod}
-              onValueChange={(v) => setAuthMethod(v as AuthMethod)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="password">Password</SelectItem>
-                <SelectItem value="private-key">Private Key</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {authMethod === "password" ? (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="password" className="pt-2 text-right">
-                Password
-              </Label>
-              <PasswordInput
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="keyPath" className="pt-2 text-right">
-                  Key Path
-                </Label>
-                <Input
-                  id="keyPath"
-                  value={keyPath}
-                  onChange={(e) => setKeyPath(e.target.value)}
-                  placeholder="~/.ssh/id_ed25519"
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="passphrase" className="pt-2 text-right">
-                  Passphrase
-                </Label>
-                <PasswordInput
-                  id="passphrase"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  placeholder="Optional"
-                  className="col-span-3"
-                />
-              </div>
-            </>
-          )}
+          <AuthMethodFields
+            authMethod={authMethod}
+            onAuthMethodChange={setAuthMethod}
+            password={password}
+            onPasswordChange={(e) => setPassword(e.target.value)}
+            keyPath={keyPath}
+            onKeyPathChange={(e) => setKeyPath(e.target.value)}
+            passphrase={passphrase}
+            onPassphraseChange={(e) => setPassphrase(e.target.value)}
+            idPrefix=""
+          />
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="startupCommand" className="pt-2 text-right">
               Startup
@@ -457,67 +570,18 @@ export function ConnectionDialog() {
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="pt-2 text-right text-xs">Auth</Label>
-                <Select
-                  value={jumpAuthMethod}
-                  onValueChange={(v) => setJumpAuthMethod(v as AuthMethod)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="password">Password</SelectItem>
-                    <SelectItem value="private-key">Private Key</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {jumpAuthMethod === "password" ? (
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="jumpPassword" className="pt-2 text-right text-xs">
-                    Password
-                  </Label>
-                  <PasswordInput
-                    id="jumpPassword"
-                    value={jumpPassword}
-                    onChange={(e) => setJumpPassword(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label
-                      htmlFor="jumpKeyPath"
-                      className="pt-2 text-right text-xs"
-                    >
-                      Key Path
-                    </Label>
-                    <Input
-                      id="jumpKeyPath"
-                      value={jumpKeyPath}
-                      onChange={(e) => setJumpKeyPath(e.target.value)}
-                      placeholder="~/.ssh/id_ed25519"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label
-                      htmlFor="jumpPassphrase"
-                      className="pt-2 text-right text-xs"
-                    >
-                      Passphrase
-                    </Label>
-                    <PasswordInput
-                      id="jumpPassphrase"
-                      value={jumpPassphrase}
-                      onChange={(e) => setJumpPassphrase(e.target.value)}
-                      placeholder="Optional"
-                      className="col-span-3"
-                    />
-                  </div>
-                </>
-              )}
+              <AuthMethodFields
+                authMethod={jumpAuthMethod}
+                onAuthMethodChange={setJumpAuthMethod}
+                password={jumpPassword}
+                onPasswordChange={(e) => setJumpPassword(e.target.value)}
+                keyPath={jumpKeyPath}
+                onKeyPathChange={(e) => setJumpKeyPath(e.target.value)}
+                passphrase={jumpPassphrase}
+                onPassphraseChange={(e) => setJumpPassphrase(e.target.value)}
+                idPrefix="jump"
+                labelClassName="pt-2 text-right text-xs"
+              />
             </>
           )}
 

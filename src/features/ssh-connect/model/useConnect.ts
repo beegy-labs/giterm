@@ -1,11 +1,8 @@
 import { useState } from "react";
-import {
-  connectFromConfig,
-  classifySshError,
-} from "@/features/ssh-connect/adapters/api/sshApi";
+import { classifySshError } from "../adapters/api/sshApi";
 import { useConnectionStore, type AuthMethod } from "@/entities/connection";
-import { useSessionStore } from "@/entities/session";
 import { useConnectDialogStore } from "./connectStore";
+import { startSession } from "./startSession";
 
 interface ConnectParams {
   name: string;
@@ -13,9 +10,9 @@ interface ConnectParams {
   port: number;
   username: string;
   authMethod: AuthMethod;
-  password: string;
-  keyPath: string;
-  passphrase: string;
+  password?: string;
+  keyPath?: string;
+  passphrase?: string;
   startupCommand?: string;
   jumpHost?: string;
   jumpPort?: number;
@@ -31,7 +28,6 @@ export function useConnect() {
   const [error, setError] = useState("");
 
   const addConnection = useConnectionStore((s) => s.addConnection);
-  const addSession = useSessionStore((s) => s.addSession);
   const setOpen = useConnectDialogStore((s) => s.setOpen);
 
   const connect = async (params: ConnectParams) => {
@@ -39,7 +35,6 @@ export function useConnect() {
     setError("");
 
     const connectionId = crypto.randomUUID();
-    const placeholderId = `connecting-${connectionId}`;
 
     try {
       const connectionConfig = {
@@ -64,28 +59,12 @@ export function useConnect() {
         jumpPassphrase: params.jumpPassphrase || undefined,
       };
 
-      addSession({
-        sessionId: placeholderId,
-        connectionId,
-        connectionName: connectionConfig.name,
-        status: "connecting",
-      });
-
-      const sessionId = await connectFromConfig(connectionConfig);
-
+      await startSession(connectionConfig, connectionConfig.name);
       addConnection(connectionConfig);
-
-      useSessionStore.getState().updateSession(placeholderId, {
-        sessionId,
-        status: "connected",
-      });
-
       setOpen(false);
     } catch (err) {
-      useSessionStore.getState().updateSession(placeholderId, {
-        status: "error",
-        error: classifySshError(err),
-      });
+      // startSession already marked the session as "error" in the store;
+      // we just need to surface the message to the dialog UI.
       setError(classifySshError(err));
     } finally {
       setConnecting(false);

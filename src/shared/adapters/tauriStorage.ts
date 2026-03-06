@@ -1,15 +1,15 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 import type { StateStorage } from "zustand/middleware";
 
-const storeCache = new Map<string, Store>();
+const storeCache = new Map<string, Promise<Store>>();
 
-async function getStore(name: string): Promise<Store> {
-  let store = storeCache.get(name);
-  if (!store) {
-    store = await load(`${name}.json`, { defaults: {}, autoSave: true });
-    storeCache.set(name, store);
+function getStore(name: string): Promise<Store> {
+  let storePromise = storeCache.get(name);
+  if (!storePromise) {
+    storePromise = load(`${name}.json`, { defaults: {}, autoSave: true });
+    storeCache.set(name, storePromise);
   }
-  return store;
+  return storePromise;
 }
 
 /**

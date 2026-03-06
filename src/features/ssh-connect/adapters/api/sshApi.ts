@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ConnectionConfig } from "@/entities/connection";
+import { loadSecrets, type ConnectionConfig } from "@/entities/connection";
 
 interface PasswordAuth {
   type: "password";
@@ -24,25 +24,18 @@ interface SshConnectConfig {
   jumpAuthMethod?: PasswordAuth | PrivateKeyAuth | null;
 }
 
-const CONNECT_TIMEOUT_MS = 15_000;
+const CONNECT_TIMEOUT_MS = 65_000;
 
-export async function sshConnect(config: SshConnectConfig): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), CONNECT_TIMEOUT_MS);
+function withTimeout<T>(promise: Promise<T>, ms = CONNECT_TIMEOUT_MS): Promise<T> {
+  let timerId: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timerId = setTimeout(() => reject(new Error("Connection timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timerId));
+}
 
-  try {
-    const result = await Promise.race([
-      invoke<string>("ssh_connect", { config }),
-      new Promise<never>((_, reject) => {
-        controller.signal.addEventListener("abort", () =>
-          reject(new Error("Connection timeout")),
-        );
-      }),
-    ]);
-    return result;
-  } finally {
-    clearTimeout(timer);
-  }
+export function sshConnect(config: SshConnectConfig): Promise<string> {
+  return withTimeout(invoke<string>("ssh_connect", { config }));
 }
 
 function buildAuthMethod(
@@ -104,54 +97,48 @@ export function classifySshError(err: unknown): string {
 export async function connectFromConfig(
   conn: ConnectionConfig,
 ): Promise<string> {
-  const config = buildSshConfig(conn);
+  // Load secrets from OS keychain before building the SSH config
+  const enriched = await loadSecrets(conn);
+  const config = buildSshConfig(enriched);
   return sshConnect(config);
 }
 
 export async function sshWrite(sessionId: string, data: string): Promise<void> {
-  const encoder = new TextEncoder();
   return invoke("ssh_write", {
     sessionId,
-    data: Array.from(encoder.encode(data)),
+    data: Array.from(new TextEncoder().encode(data)),
   });
 }
+
+const lastResizeCache = new Map<string, string>();
 
 export async function sshResize(
   sessionId: string,
   cols: number,
   rows: number,
 ): Promise<void> {
+  const key = `${cols}x${rows}`;
+  if (lastResizeCache.get(sessionId) === key) return;
+  lastResizeCache.set(sessionId, key);
   return invoke("ssh_resize", { sessionId, cols, rows });
 }
 
 export async function sshDisconnect(sessionId: string): Promise<void> {
+  lastResizeCache.delete(sessionId);
   return invoke("ssh_disconnect", { sessionId });
 }
 
-export async function sshExec(
+export async function sshHostKeyVerifyRespond(
   sessionId: string,
-  command: string,
-): Promise<string> {
-  return invoke("ssh_exec", { sessionId, command });
+  accepted: boolean,
+): Promise<void> {
+  return invoke("ssh_host_key_verify_respond", { sessionId, accepted });
 }
 
 export async function sshTestConnection(
   conn: ConnectionConfig,
 ): Promise<void> {
-  const config = buildSshConfig(conn);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), CONNECT_TIMEOUT_MS);
-
-  try {
-    await Promise.race([
-      invoke<void>("ssh_test_connection", { config }),
-      new Promise<never>((_, reject) => {
-        controller.signal.addEventListener("abort", () =>
-          reject(new Error("Connection timeout")),
-        );
-      }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
+  const enriched = await loadSecrets(conn);
+  const config = buildSshConfig(enriched);
+  await withTimeout(invoke<void>("ssh_test_connection", { config }));
 }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { MAX_TUNNELS } from "@/shared/lib/constants";
 
 export type TunnelStatus = "active" | "stopped" | "error";
 
@@ -16,17 +17,20 @@ export interface TunnelConfig {
 
 interface TunnelState {
   tunnels: TunnelConfig[];
-  addTunnel: (tunnel: TunnelConfig) => void;
+  addTunnel: (tunnel: TunnelConfig) => boolean;
   removeTunnel: (id: string) => void;
   updateTunnel: (id: string, updates: Partial<TunnelConfig>) => void;
-  getTunnelsBySession: (sessionId: string) => TunnelConfig[];
 }
 
 export const useTunnelStore = create<TunnelState>()((set, get) => ({
   tunnels: [],
 
-  addTunnel: (tunnel) =>
-    set((state) => ({ tunnels: [...state.tunnels, tunnel] })),
+  addTunnel: (tunnel) => {
+    const state = get();
+    if (state.tunnels.length >= MAX_TUNNELS) return false;
+    set({ tunnels: [...state.tunnels, tunnel] });
+    return true;
+  },
 
   removeTunnel: (id) =>
     set((state) => ({
@@ -40,6 +44,4 @@ export const useTunnelStore = create<TunnelState>()((set, get) => ({
       ),
     })),
 
-  getTunnelsBySession: (sessionId) =>
-    get().tunnels.filter((t) => t.sessionId === sessionId),
 }));

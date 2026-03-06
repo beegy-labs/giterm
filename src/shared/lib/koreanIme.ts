@@ -6,14 +6,6 @@ const JAMO_END = 0x11ff;
 const COMPAT_JAMO_START = 0x3130;
 const COMPAT_JAMO_END = 0x318f;
 
-/** Check if a character is a composed Korean syllable (가-힣) */
-export function isSyllable(char: string): boolean {
-  if (!char) return false;
-  const code = char.codePointAt(0);
-  if (code === undefined) return false;
-  return code >= SYLLABLE_START && code <= SYLLABLE_END;
-}
-
 /** Check if a character is Korean (syllable or jamo) */
 export function isKorean(char: string): boolean {
   if (!char) return false;
@@ -46,21 +38,6 @@ export function isDuplicateEvent(
   lastText: string,
 ): boolean {
   return currentText === lastText;
-}
-
-/** Check if a Korean syllable has no final consonant (종성) */
-export function hasNoFinalConsonant(char: string): boolean {
-  const code = char.codePointAt(0);
-  if (code === undefined) return false;
-  if (code < SYLLABLE_START || code > SYLLABLE_END) return false;
-  return (code - SYLLABLE_START) % 28 === 0;
-}
-
-/** Check if a character is a bare Korean consonant (compatibility jamo ㄱ-ㅎ) */
-export function isBareConsonant(char: string): boolean {
-  const code = char.codePointAt(0);
-  if (code === undefined) return false;
-  return code >= 0x3131 && code <= 0x314e;
 }
 
 /** Split string into characters (Array.from handles surrogate pairs) */

@@ -52,15 +52,24 @@ function AlertDialogContent({
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
-      <AlertDialogPrimitive.Content
-        data-slot="alert-dialog-content"
-        data-size={size}
-        className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg",
-          className
-        )}
-        {...props}
-      />
+      {/*
+       * Centering wrapper — flex-based, NO CSS transform.
+       * iOS WKWebView miscalculates caret position when an ancestor has
+       * translate(-50%, -50%). Using flex centering avoids any transform
+       * on the dialog, so the native input caret renders at the correct position.
+       * pointer-events-none lets overlay dismiss clicks pass through the wrapper.
+       */}
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center p-4 pointer-events-none" style={{ height: "var(--vvh, 100vh)" }}>
+        <AlertDialogPrimitive.Content
+          data-slot="alert-dialog-content"
+          data-size={size}
+          className={cn(
+            "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 group/alert-dialog-content pointer-events-auto relative grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg",
+            className
+          )}
+          {...props}
+        />
+      </div>
     </AlertDialogPortal>
   )
 }

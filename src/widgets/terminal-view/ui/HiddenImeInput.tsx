@@ -3,7 +3,7 @@ import {
   useCallback,
   useImperativeHandle,
   useEffect,
-  forwardRef,
+  type Ref,
 } from "react";
 import { ESC } from "@/shared/lib/escapeSequences";
 import {
@@ -41,26 +41,33 @@ const IME_DEBUG = import.meta.env.DEV;
 
 export interface HiddenImeInputHandle {
   focus: () => void;
+  /** Focus AND immediately set inputMode="text" so iOS shows the keyboard.
+   *  Direct DOM mutation avoids the React re-render race where focus() fires
+   *  before the inputMode prop update reaches the DOM. */
+  focusWithKeyboard: () => void;
   handleToolbarBackspace: () => void;
 }
 
 interface HiddenImeInputProps {
+  ref?: Ref<HiddenImeInputHandle>;
   onCommit: (text: string) => void;
   onComposingUpdate: (composing: string) => void;
   onSpecialKey: (key: string) => void;
   onImeLog?: (line: string) => void;
+  inputMode?: "none" | "text";
 }
 
 const INPUT_STYLE =
   "pointer-events-auto absolute -left-[10000px] -top-[10000px] size-px opacity-0";
 
-export const HiddenImeInput = forwardRef<
-  HiddenImeInputHandle,
-  HiddenImeInputProps
->(function HiddenImeInput(
-  { onCommit, onComposingUpdate, onSpecialKey, onImeLog },
+export function HiddenImeInput({
   ref,
-) {
+  onCommit,
+  onComposingUpdate,
+  onSpecialKey,
+  onImeLog,
+  inputMode = "none",
+}: HiddenImeInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const imeStateRef = useRef(createInitialState());
@@ -266,6 +273,16 @@ export const HiddenImeInput = forwardRef<
 
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current?.focus(),
+    focusWithKeyboard: () => {
+      const input = inputRef.current;
+      if (!input) return;
+      // Set inputMode directly on the DOM element BEFORE calling focus().
+      // React's re-render (which updates the inputMode prop) is async — if we
+      // only call setShowKeyboard(true) + focus(), iOS reads inputMode="none"
+      // at focus time and suppresses the keyboard.
+      input.inputMode = "text";
+      input.focus();
+    },
     handleToolbarBackspace: () => {
       const state = imeStateRef.current;
       if (state.composing !== "") {
@@ -439,6 +456,10 @@ export const HiddenImeInput = forwardRef<
       enterKeyHint="send"
       aria-hidden={true}
       tabIndex={-1}
+      // inputMode controls whether iOS shows the virtual keyboard.
+      // "none" = no keyboard (viewport stable, hardware keyboard still works)
+      // "text" = show keyboard (required for Korean IME composition on iOS)
+      inputMode={inputMode}
     />
   );
-});
+}

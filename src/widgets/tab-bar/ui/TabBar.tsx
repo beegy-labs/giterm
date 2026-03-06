@@ -1,31 +1,21 @@
 import { useCallback, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useSessionStore, type SessionStatus } from "@/entities/session";
+import { useSessionStore, MAX_SESSIONS } from "@/entities/session";
 import { useConnectDialogStore } from "@/features/ssh-connect";
-import { sshDisconnect } from "@/features/ssh-connect";
-import { cancelReconnect } from "@/features/ssh-reconnect";
+import { statusColor } from "@/shared/lib/statusColor";
 
-function statusColor(status: SessionStatus): string {
-  switch (status) {
-    case "connected":
-      return "bg-green-500";
-    case "connecting":
-    case "reconnecting":
-      return "bg-yellow-500";
-    case "disconnected":
-    case "error":
-      return "bg-red-500";
-  }
+interface TabBarProps {
+  onCloseSession?: (sessionId: string) => void;
 }
 
-export function TabBar() {
+export function TabBar({ onCloseSession }: TabBarProps) {
   const sessions = useSessionStore((s) => s.sessions);
   const activeIndex = useSessionStore((s) => s.activeIndex);
   const setActiveIndex = useSessionStore((s) => s.setActiveIndex);
   const removeSession = useSessionStore((s) => s.removeSession);
   const reorderSessions = useSessionStore((s) => s.reorderSessions);
-  const canAddMore = useSessionStore((s) => s.canAddMore);
+  const canAddMore = sessions.length < MAX_SESSIONS;
   const setDialogOpen = useConnectDialogStore((s) => s.setOpen);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -35,14 +25,13 @@ export function TabBar() {
   const handleClose = useCallback(
     async (e: React.MouseEvent, sessionId: string) => {
       e.stopPropagation();
-      cancelReconnect(sessionId);
-      const session = sessions.find((s) => s.sessionId === sessionId);
-      if (session && session.status === "connected") {
-        await sshDisconnect(sessionId).catch(console.error);
+      if (onCloseSession) {
+        onCloseSession(sessionId);
+      } else {
+        removeSession(sessionId);
       }
-      removeSession(sessionId);
     },
-    [sessions, removeSession],
+    [onCloseSession, removeSession],
   );
 
   const handleDragStart = useCallback(
@@ -121,7 +110,7 @@ export function TabBar() {
           </button>
         </div>
       ))}
-      {canAddMore() && (
+      {canAddMore && (
         <Button
           variant="ghost"
           size="icon-xs"

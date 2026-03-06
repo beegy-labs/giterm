@@ -1,7 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Sidebar } from "@/widgets/sidebar";
 import { useConnectionStore } from "@/entities/connection";
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  };
+}
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -17,12 +31,12 @@ describe("Sidebar", () => {
   });
 
   it("should render the header", () => {
-    render(<Sidebar />);
+    render(<Sidebar />, { wrapper: createWrapper() });
     expect(screen.getByText("Connections")).toBeInTheDocument();
   });
 
   it("should show empty state when no connections", () => {
-    render(<Sidebar />);
+    render(<Sidebar />, { wrapper: createWrapper() });
     expect(screen.getByText("No saved connections")).toBeInTheDocument();
   });
 
@@ -39,14 +53,14 @@ describe("Sidebar", () => {
         },
       ],
     });
-    render(<Sidebar />);
+    render(<Sidebar />, { wrapper: createWrapper() });
     expect(screen.getByText("Test Server")).toBeInTheDocument();
     expect(screen.getByText("SSH")).toBeInTheDocument();
     // Privacy: should NOT show user@host:port
     expect(screen.queryByText("user@example.com:22")).not.toBeInTheDocument();
   });
 
-  it("should show custom port indicator for non-standard ports", () => {
+  it("should not leak port metadata for non-standard ports", () => {
     useConnectionStore.setState({
       connections: [
         {
@@ -59,7 +73,9 @@ describe("Sidebar", () => {
         },
       ],
     });
-    render(<Sidebar />);
-    expect(screen.getByText("Custom Port")).toBeInTheDocument();
+    render(<Sidebar />, { wrapper: createWrapper() });
+    // Privacy: should NOT show port info
+    expect(screen.queryByText("Custom Port")).not.toBeInTheDocument();
+    expect(screen.queryByText("2222")).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useConnectionStore, type ConnectionConfig } from "@/entities/connection";
+import { useConnectionStore, selectConnectionById, type ConnectionConfig } from "@/entities/connection";
 
 describe("connectionStore", () => {
   beforeEach(() => {
@@ -42,14 +42,14 @@ describe("connectionStore", () => {
     expect(connections[0]?.host).toBe("example.com");
   });
 
-  it("should get a connection by id", () => {
+  it("should get a connection by id via selector", () => {
     useConnectionStore.getState().addConnection(mockConnection);
-    const conn = useConnectionStore.getState().getConnection("test-1");
+    const conn = selectConnectionById("test-1")(useConnectionStore.getState());
     expect(conn).toEqual(mockConnection);
   });
 
   it("should return undefined for non-existent connection", () => {
-    const conn = useConnectionStore.getState().getConnection("non-existent");
+    const conn = selectConnectionById("non-existent")(useConnectionStore.getState());
     expect(conn).toBeUndefined();
   });
 

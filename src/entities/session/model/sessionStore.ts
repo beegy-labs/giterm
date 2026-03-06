@@ -1,11 +1,8 @@
 import { create } from "zustand";
+import { MAX_SESSIONS } from "@/shared/lib/constants";
+import type { SessionStatus } from "@/shared/lib/types";
 
-export type SessionStatus =
-  | "connecting"
-  | "connected"
-  | "disconnected"
-  | "reconnecting"
-  | "error";
+export type { SessionStatus };
 
 export interface TerminalSession {
   sessionId: string;
@@ -13,17 +10,13 @@ export interface TerminalSession {
   connectionName: string;
   status: SessionStatus;
   error?: string;
-  reconnectAttempt?: number;
 }
 
-const MAX_SESSIONS = 5;
+export { MAX_SESSIONS };
 
 interface SessionState {
   sessions: TerminalSession[];
   activeIndex: number;
-
-  /** Computed: currently active session (or null) */
-  activeSession: TerminalSession | null;
 
   addSession: (session: TerminalSession) => boolean;
   removeSession: (sessionId: string) => void;
@@ -34,16 +27,6 @@ interface SessionState {
     sessionId: string,
     updates: Partial<TerminalSession>,
   ) => void;
-  updateSessionStatus: (
-    sessionId: string,
-    status: SessionStatus,
-    error?: string,
-  ) => void;
-  canAddMore: () => boolean;
-  getSessionByConnectionId: (connectionId: string) => TerminalSession | undefined;
-
-  /** @deprecated Use addSession / removeSession instead */
-  setActiveSession: (session: TerminalSession | null) => void;
 }
 
 function computeActiveSession(
@@ -54,14 +37,12 @@ function computeActiveSession(
   return sessions[Math.min(activeIndex, sessions.length - 1)] ?? null;
 }
 
+export const selectActiveSession = (s: SessionState): TerminalSession | null =>
+  computeActiveSession(s.sessions, s.activeIndex);
+
 export const useSessionStore = create<SessionState>()((set, get) => ({
   sessions: [],
   activeIndex: 0,
-
-  get activeSession() {
-    const state = get();
-    return computeActiveSession(state.sessions, state.activeIndex);
-  },
 
   addSession: (session) => {
     const state = get();
@@ -70,7 +51,6 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     set({
       sessions: newSessions,
       activeIndex: newSessions.length - 1,
-      activeSession: session,
     });
     return true;
   },
@@ -93,27 +73,20 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     set({
       sessions: newSessions,
       activeIndex: newIndex,
-      activeSession: computeActiveSession(newSessions, newIndex),
     });
   },
 
   setActiveIndex: (index) => {
     const state = get();
     if (index < 0 || index >= state.sessions.length) return;
-    set({
-      activeIndex: index,
-      activeSession: state.sessions[index],
-    });
+    set({ activeIndex: index });
   },
 
   setActiveBySessionId: (sessionId) => {
     const state = get();
     const idx = state.sessions.findIndex((s) => s.sessionId === sessionId);
     if (idx !== -1) {
-      set({
-        activeIndex: idx,
-        activeSession: state.sessions[idx],
-      });
+      set({ activeIndex: idx });
     }
   },
 
@@ -150,49 +123,20 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     set({
       sessions: newSessions,
       activeIndex: newIndex,
-      activeSession: computeActiveSession(newSessions, newIndex),
     });
   },
 
   updateSession: (sessionId, updates) => {
-    set((state) => {
-      const newSessions = state.sessions.map((s) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
         s.sessionId === sessionId ? { ...s, ...updates } : s,
-      );
-      return {
-        sessions: newSessions,
-        activeSession: computeActiveSession(newSessions, state.activeIndex),
-      };
-    });
+      ),
+    }));
   },
 
-  updateSessionStatus: (sessionId, status, error) => {
-    set((state) => {
-      const newSessions = state.sessions.map((s) =>
-        s.sessionId === sessionId ? { ...s, status, error } : s,
-      );
-      return {
-        sessions: newSessions,
-        activeSession: computeActiveSession(newSessions, state.activeIndex),
-      };
-    });
-  },
 
-  canAddMore: () => get().sessions.length < MAX_SESSIONS,
-
-  getSessionByConnectionId: (connectionId) =>
-    get().sessions.find((s) => s.connectionId === connectionId),
-
-  // Backwards-compatible setter — replaces all sessions with a single one (or clears)
-  setActiveSession: (session) => {
-    if (!session) {
-      set({ sessions: [], activeIndex: 0, activeSession: null });
-    } else {
-      set({
-        sessions: [session],
-        activeIndex: 0,
-        activeSession: session,
-      });
-    }
-  },
 }));
+
+export const selectSessionByConnectionId =
+  (connectionId: string) => (state: SessionState) =>
+    state.sessions.find((s) => s.connectionId === connectionId);

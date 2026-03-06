@@ -7,12 +7,8 @@ export const ESC = {
   arrowDown: "\x1B[B",
   arrowLeft: "\x1B[D",
   arrowRight: "\x1B[C",
-  home: "\x1B[H",
-  end: "\x1B[F",
   pageUp: "\x1B[5~",
   pageDown: "\x1B[6~",
-  insert: "\x1B[2~",
-  delete: "\x1B[3~",
   f1: "\x1BOP",
   f2: "\x1BOQ",
   f3: "\x1BOR",
@@ -26,7 +22,3 @@ export const ESC = {
   f11: "\x1B[23~",
   f12: "\x1B[24~",
 } as const;
-
-export function ctrl(key: string): string {
-  return String.fromCharCode(key.charCodeAt(0) & 0x1f);
-}

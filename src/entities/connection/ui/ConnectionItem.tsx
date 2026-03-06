@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/ui/alert-dialog";
-import type { ConnectionConfig } from "@/entities/connection/model/connectionStore";
+import type { ConnectionConfig } from "../model/connectionStore";
 
 interface ConnectionItemProps {
   connection: ConnectionConfig;
@@ -87,9 +87,6 @@ export function ConnectionItem({
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>SSH</span>
-            {connection.port !== 22 && (
-              <span className="text-muted-foreground/70">Custom Port</span>
-            )}
             {activeCount > 0 && (
               <span className="rounded-full bg-primary/20 px-1.5 text-xs text-primary">
                 {activeCount}
@@ -136,9 +133,6 @@ export function ConnectionItem({
         <div className="truncate text-sm font-medium">{connection.name}</div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <span>SSH</span>
-          {connection.port !== 22 && (
-            <span className="text-muted-foreground/70">Custom Port</span>
-          )}
           {activeCount > 0 && (
             <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-[10px] text-primary">
               {activeCount}

@@ -1,11 +1,8 @@
 import { useSessionStore } from "@/entities/session";
-import { useConnectionStore } from "@/entities/connection";
-import {
-  connectFromConfig,
-  classifySshError,
-} from "@/features/ssh-connect/adapters/api/sshApi";
+import { useConnectionStore, selectConnectionById } from "@/entities/connection";
+import { connectFromConfig, classifySshError } from "../adapters/api/sshApi";
 
-/** Maps sessionId → cancel function for active reconnection attempts */
+/** Maps sessionId -> cancel function for active reconnection attempts */
 const activeReconnects = new Map<string, () => void>();
 
 export function cancelReconnect(sessionId: string) {
@@ -19,15 +16,19 @@ export function cancelReconnect(sessionId: string) {
 /**
  * Manually triggered reconnect for a disconnected session.
  * Sets status to "reconnecting" while connecting, then "connected" or "error".
+ *
+ * On success the session's `sessionId` is updated to the new backend ID so that
+ * `sshWrite` / `sshResize` target the correct Rust session. The xterm instance
+ * migration from old key -> new key is handled by `useTerminalInstances`.
  */
 export async function reconnectSession(sessionId: string) {
   const state = useSessionStore.getState();
   const session = state.sessions.find((s) => s.sessionId === sessionId);
   if (!session) return;
 
-  const connection = useConnectionStore
-    .getState()
-    .getConnection(session.connectionId);
+  const connection = selectConnectionById(session.connectionId)(
+    useConnectionStore.getState(),
+  );
   if (!connection) return;
 
   let cancelled = false;
@@ -35,14 +36,13 @@ export async function reconnectSession(sessionId: string) {
     cancelled = true;
     useSessionStore.getState().updateSession(sessionId, {
       status: "disconnected",
-      reconnectAttempt: 0,
+
     });
   };
   activeReconnects.set(sessionId, cancel);
 
   useSessionStore.getState().updateSession(sessionId, {
     status: "reconnecting",
-    reconnectAttempt: 1,
   });
 
   try {
@@ -52,7 +52,7 @@ export async function reconnectSession(sessionId: string) {
     useSessionStore.getState().updateSession(sessionId, {
       sessionId: newSessionId,
       status: "connected",
-      reconnectAttempt: 0,
+
       error: undefined,
     });
   } catch (err) {
@@ -60,7 +60,7 @@ export async function reconnectSession(sessionId: string) {
     useSessionStore.getState().updateSession(sessionId, {
       status: "error",
       error: classifySshError(err),
-      reconnectAttempt: 0,
+
     });
   } finally {
     activeReconnects.delete(sessionId);

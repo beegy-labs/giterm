@@ -1,6 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useTerminalSettingsStore } from "@/entities/session/model/terminalSettingsStore";
+import { useTerminalSettingsStore } from "@/entities/session";
 
 export function FontSizeControls() {
   const fontSize = useTerminalSettingsStore((s) => s.fontSize);

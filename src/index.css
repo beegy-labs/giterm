@@ -100,12 +100,18 @@
     }
     html, body {
         height: 100%;
-        overflow: hidden;
+        /* NOTE: overflow:hidden intentionally removed.
+         * When overflow:hidden is set on html/body, window.scrollTo(0,0) becomes
+         * a no-op — the browser doesn't translate it to UIScrollView.setContentOffset:(0,0).
+         * Removing it allows JS scroll resets to actually reach the native UIScrollView.
+         * Content overflow is controlled by #root { overflow: hidden } instead. */
         overscroll-behavior: none;
     }
     body {
         @apply bg-background text-foreground;
         font-family: system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -webkit-touch-callout: none;
         -webkit-user-select: none;
         user-select: none;
     }
@@ -119,10 +125,47 @@
     .rounded-soft {
         border-radius: 8px;
     }
-    .pt-safe {
+    /*
+     * Mobile Screen Header Pattern (iOS safe area)
+     *
+     * Use on the HEADER/BAR element, NOT on the outer screen container.
+     * This lets the header background fill behind the Dynamic Island/status bar
+     * while text appears just below it — native iOS look.
+     *
+     * - pt-safe-bar  : for compact bars (toolbar, tab bar) — safe area only
+     * - pt-safe-header: for page headers with standard 12px top padding
+     */
+    .pt-safe-bar {
         padding-top: env(safe-area-inset-top);
     }
-    .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom);
+    .pt-safe-header {
+        padding-top: calc(env(safe-area-inset-top) + 0.75rem);
     }
 }
+
+/*
+ * iOS WKWebView caret misalignment fix
+ *
+ * Root cause: When an <input> is focused inside a fixed/modal dialog on iOS,
+ * WKWebView's internal UIScrollView auto-scrolls to bring the input into view.
+ * This shifts the layout viewport coordinate system while the caret position
+ * is computed in the pre-scroll system — causing the caret to render below
+ * the actual input field.
+ *
+ * Fix (WebKit bug #176896 workaround): A momentary opacity change on focus
+ * prevents WKWebView from triggering its scroll-to-focus adjustment. The
+ * animation completes in 10ms — invisible to the user, but enough to suppress
+ * the auto-scroll that causes the coordinate mismatch.
+ *
+ * Source: https://gist.github.com/kiding/72721a0553fa93198ae2bb6eefaa3299
+ */
+@keyframes ios-caret-fix {
+    from { opacity: 0.9999; }
+    to   { opacity: 1; }
+}
+
+input:focus,
+textarea:focus {
+    animation: ios-caret-fix 0.01s;
+}
+
