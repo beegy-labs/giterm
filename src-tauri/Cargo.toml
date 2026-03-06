@@ -1,0 +1,35 @@
+[package]
+name = "giterm"
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+name = "giterm_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+# tauri-plugin-shell removed — not needed without shell:allow-open
+tauri-plugin-log = "2"
+tauri-plugin-store = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "net", "io-util"] }
+log = "0.4"
+specta = { version = "=2.0.0-rc.20" }
+specta-typescript = "0.0.7"
+tauri-specta = { version = "=2.0.0-rc.20", features = ["derive", "typescript"] }
+russh = "0.57"
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+dirs = "6"
+sha2 = "0.10"
+base64 = "0.22"
+zeroize = { version = "1", features = ["derive"] }
+keyring = "3"
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"

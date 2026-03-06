@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Rust
+src-tauri/target/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# Generated
+src-tauri/gen/
+src/bindings.ts
+
+# Test
+coverage/
+
+# pnpm
+.npmrc.tmp
+
+# Build number
+.build_number
