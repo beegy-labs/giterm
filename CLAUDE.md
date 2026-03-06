@@ -2,7 +2,7 @@
 
 ## Project
 
-giterm — Tauri v2 + Rust + React desktop app (SSH terminal client)
+giterm — Tauri v2 + Rust + React desktop + iOS app (SSH terminal client)
 
 ## Commands
 
@@ -19,9 +19,10 @@ giterm — Tauri v2 + Rust + React desktop app (SSH terminal client)
 
 - TypeScript: strict mode, no `any`, use `@/` import alias
 - Rust: all commands use `#[specta::specta]` + `#[tauri::command]`
-- Tauri IPC: always via `features/*/adapters/api/` (out-adapter)
+- Tauri IPC: commands via `features/*/adapters/api/`, events via `features/*/adapters/events/`
 - Components: shadcn/ui in `shared/ui/`, Tailwind CSS v4
-- State: Zustand stores in `entities/*/model/` or `features/*/model/`
+- State: Zustand stores in `entities/*/model/`, derived state via selectors (not store getters)
+- Async: TanStack Query `queryOptions()` factories in `shared/queries/`
 - Tests: co-located `*.test.tsx` / `*.test.ts` files
 - Design: Midnight Gentle Study theme (WCAG AAA), 8pt grid
 - Privacy: NEVER display IP/username/port in UI — use connection name only
@@ -31,12 +32,12 @@ giterm — Tauri v2 + Rust + React desktop app (SSH terminal client)
 
 ```
 src/
-├── app/           — Bootstrap, providers
+├── app/           — Bootstrap, providers, ErrorBoundary
 ├── pages/         — Page compositions
-├── widgets/       — Self-contained UI blocks
-├── features/      — User-facing functionality (ui + model + adapters)
-├── entities/      — Domain entities (store + UI)
-├── shared/        — Reusable (ui, lib, config)
+├── widgets/       — Self-contained UI blocks (ui/ + model/)
+├── features/      — User-facing functionality (ui + model + adapters: api/ + events/)
+├── entities/      — Domain entities (store + selectors + UI)
+├── shared/        — Reusable (ui, lib, config, queries, adapters)
 └── bindings.ts    — tauri-specta generated
 ```
 

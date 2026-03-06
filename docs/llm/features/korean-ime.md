@@ -1,6 +1,6 @@
 # Korean IME Input — Architecture
 
-> Terminal IME for iOS WKWebView | **Last Updated**: 2026-02-22
+> Terminal IME for iOS WKWebView | **Last Updated**: 2026-03-04
 
 ## iOS Korean IME Quirks
 
@@ -88,27 +88,13 @@ Commit only up to `charCount - 1` chars. All chars safe when last char is non-Ko
 
 ## Reset Policy
 
-| Trigger | Context | Action |
-|---------|---------|--------|
-| `beforeinput(insertText)` + `needsResetRef` | User gesture | `resetField()` then continue |
-| `beforeinput(delete)` + `needsResetRef` | User gesture | `resetField()` + preventDefault |
-| 50ms fallback timer fires | Non-gesture (setTimeout) | Set `needsResetRef=true` only |
-| Enter key | keyDown | `resetField()` directly |
-| Toolbar backspace with composing | Click | `resetField()` directly |
-| onChange fallback | onChange | `resetField()` if beforeinput missed |
+- `beforeinput(insertText)` + `needsResetRef` → `resetField()` then continue
+- `beforeinput(delete)` + `needsResetRef` → `resetField()` + preventDefault
+- 50ms fallback timer → set `needsResetRef=true` only (deferred)
+- Enter / toolbar backspace with composing → `resetField()` directly
+- onChange fallback → `resetField()` if beforeinput missed
 
 ## Debug
 
-IME log (dev only): `find ~/Library/Developer/CoreSimulator/Devices -name "giterm-ime-*.log" | sort | tail -1`
-
-Format: `[HH:MM:SS.mmm] [IME] ...`
-
-| Prefix | Meaning |
-|--------|---------|
-| `BEFOREINPUT: type=` | Incoming event (reset, comp, out state) |
-| `CHANGE: text=` | onChange processed |
-| `CHANGE: skipped` | Delete half of pair (waiting for insert) |
-| `ACTIONS:` | processText output |
-| `RESET:` | resetField() executed |
-| `RESET_DEFERRED:` | needsResetRef=true, awaiting next insertText |
-| `DELETE_TIMER:` | 50ms fallback fired (real backspace) |
+Dev only: `find ~/Library/Developer/CoreSimulator/Devices -name "giterm-ime-*.log" | sort | tail -1`
+See `docs/llm/features/ime-log.md` for log format details.

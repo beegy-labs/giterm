@@ -9,7 +9,7 @@
 | Rules | `.ai/rules.md` | Core DO/DON'T |
 | App Spec | `.ai/apps/giterm.md` | App indicator |
 | Full Spec | `docs/llm/apps/giterm.md` | App SSOT (Tier 2) |
-| Korean IME | `docs/llm/features/korean-ime.md` | IME architecture (Tier 2) |
+| Feature Docs | `docs/llm/features/*.md` | Per-feature SSOT (9 docs, Tier 2) |
 | Roadmap | `.specs/apps/giterm/roadmap.md` | Milestones |
 
 ## Architecture
