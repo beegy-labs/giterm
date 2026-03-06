@@ -61,3 +61,15 @@ pub async fn ssh_disconnect(
 ) -> Result<(), String> {
     state.disconnect(&session_id).await
 }
+
+/// Frontend calls this to accept or reject a host key verification prompt.
+#[tauri::command]
+#[specta::specta]
+pub async fn ssh_host_key_verify_respond(
+    session_id: String,
+    accepted: bool,
+    state: State<'_, SshSessionManager>,
+) -> Result<(), String> {
+    state.resolve_host_key_verify(&session_id, accepted).await;
+    Ok(())
+}

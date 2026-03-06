@@ -1,19 +1,19 @@
 use super::debug_log::DebugLogState;
 
-pub struct ImeLogState(DebugLogState);
+pub struct VpLogState(DebugLogState);
 
-impl ImeLogState {
+impl VpLogState {
     pub fn new() -> Self {
-        Self(DebugLogState::new("giterm-ime-"))
+        Self(DebugLogState::new("giterm-vp-"))
     }
 }
 
-/// Start a new IME log session. Creates a timestamped file in temp dir.
-/// Returns the file path. **Only available in debug builds.**
+/// Start a new viewport log session.
+/// **Only available in debug builds.**
 #[tauri::command]
 #[specta::specta]
-pub fn ime_log_start(
-    #[allow(unused_variables)] state: tauri::State<ImeLogState>,
+pub fn vp_log_start(
+    #[allow(unused_variables)] state: tauri::State<VpLogState>,
 ) -> Result<String, String> {
     #[cfg(debug_assertions)]
     {
@@ -21,17 +21,17 @@ pub fn ime_log_start(
     }
     #[cfg(not(debug_assertions))]
     {
-        Err("IME logging is disabled in release builds".to_string())
+        Err("Viewport logging is disabled in release builds".to_string())
     }
 }
 
-/// Append a line to the current IME log (with timestamp prefix).
+/// Append a line to the viewport log.
 /// **Only available in debug builds.**
 #[tauri::command]
 #[specta::specta]
-pub fn ime_log_append(
+pub fn vp_log_append(
     #[allow(unused_variables)] line: String,
-    #[allow(unused_variables)] state: tauri::State<ImeLogState>,
+    #[allow(unused_variables)] state: tauri::State<VpLogState>,
 ) -> Result<(), String> {
     #[cfg(debug_assertions)]
     {
@@ -43,12 +43,12 @@ pub fn ime_log_append(
     }
 }
 
-/// Stop the current IME log session.
+/// Stop the viewport log session.
 /// **Only available in debug builds.**
 #[tauri::command]
 #[specta::specta]
-pub fn ime_log_stop(
-    #[allow(unused_variables)] state: tauri::State<ImeLogState>,
+pub fn vp_log_stop(
+    #[allow(unused_variables)] state: tauri::State<VpLogState>,
 ) -> Result<(), String> {
     #[cfg(debug_assertions)]
     {

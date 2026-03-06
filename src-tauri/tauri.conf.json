@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicosResworksData/tauri/dev/crates/tauri-config-schema/schema.json",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
   "productName": "giterm",
   "version": "1.0.0",
   "identifier": "com.vero.giterm",
@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src ipc: http://ipc.localhost"
     }
   },
   "bundle": {

@@ -1,4 +1,5 @@
 pub mod client;
+pub mod known_hosts;
 pub mod session;
 pub mod tunnel;
 pub mod types;

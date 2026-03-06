@@ -51,11 +51,10 @@ impl TunnelManager {
                             Ok((tcp_stream, _)) => {
                                 let handle = session_handle.clone();
                                 let rhost = remote_host.clone();
-                                let rport = remote_port;
 
                                 tokio::spawn(async move {
                                     if let Err(e) = Self::handle_connection(
-                                        handle, tcp_stream, &rhost, rport,
+                                        handle, tcp_stream, &rhost, remote_port,
                                     ).await {
                                         log::error!("Tunnel connection error: {}", e);
                                     }
@@ -72,6 +71,7 @@ impl TunnelManager {
                     }
                 }
             }
+            // Cleanup: remove tunnel from map after loop exits (cancel or error)
             tunnels.lock().await.remove(&tid);
         });
 
@@ -95,6 +95,7 @@ impl TunnelManager {
         drop(h);
 
         let (mut tcp_read, mut tcp_write) = tcp_stream.into_split();
+        let mut buf = [0u8; 8192];
 
         loop {
             tokio::select! {
@@ -111,18 +112,14 @@ impl TunnelManager {
                         _ => {}
                     }
                 }
-                result = async {
-                    let mut buf = [0u8; 8192];
-                    tcp_read.read(&mut buf).await.map(|n| (n, buf))
-                } => {
-                    match result {
-                        Ok((0, _)) => break,
-                        Ok((n, buf)) => {
+                n = tcp_read.read(&mut buf) => {
+                    match n {
+                        Ok(0) | Err(_) => break,
+                        Ok(n) => {
                             if channel.data(&buf[..n]).await.is_err() {
                                 break;
                             }
                         }
-                        Err(_) => break,
                     }
                 }
             }

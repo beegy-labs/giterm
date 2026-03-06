@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::fmt;
+use zeroize::Zeroize;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionConfig {
     pub host: String,
@@ -15,13 +17,67 @@ pub struct ConnectionConfig {
     pub jump_auth_method: Option<AuthMethod>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+impl fmt::Debug for ConnectionConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ConnectionConfig")
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("username", &"[REDACTED]")
+            .field("auth_method", &self.auth_method)
+            .finish()
+    }
+}
+
+impl fmt::Debug for AuthMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AuthMethod::Password { .. } => f.debug_struct("Password").finish_non_exhaustive(),
+            AuthMethod::PrivateKey { key_path, .. } => f
+                .debug_struct("PrivateKey")
+                .field("key_path", key_path)
+                .finish_non_exhaustive(),
+        }
+    }
+}
+
+/// Zeroize sensitive fields when ConnectionConfig goes out of scope.
+impl Drop for ConnectionConfig {
+    fn drop(&mut self) {
+        self.auth_method.zeroize();
+        if let Some(ref mut auth) = self.jump_auth_method {
+            auth.zeroize();
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum AuthMethod {
     #[serde(rename_all = "camelCase")]
     Password { password: String },
     #[serde(rename_all = "camelCase")]
     PrivateKey { key_path: String, passphrase: Option<String> },
+}
+
+impl Zeroize for AuthMethod {
+    fn zeroize(&mut self) {
+        match self {
+            AuthMethod::Password { password } => {
+                password.zeroize();
+            }
+            AuthMethod::PrivateKey { passphrase, .. } => {
+                if let Some(ref mut pp) = passphrase {
+                    pp.zeroize();
+                }
+            }
+        }
+    }
+}
+
+impl Drop for AuthMethod {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
