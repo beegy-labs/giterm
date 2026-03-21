@@ -165,7 +165,6 @@ interface ConnectionConfigParams {
   keyPath: string;
   passphrase: string;
   startupCommand: string;
-  tmuxMouseOn: boolean;
   filterAuth: boolean;
 }
 
@@ -200,7 +199,6 @@ function buildConnectionConfig(
     keyPath: authField(params.keyPath, "private-key"),
     passphrase: authField(params.passphrase, "private-key"),
     startupCommand: params.startupCommand || undefined,
-    tmuxMouseOn: params.tmuxMouseOn || undefined,
   };
 
   if (!jump.showJumpHost || !jump.jumpHost) {
@@ -242,7 +240,6 @@ export function ConnectionDialog() {
   const [keyPath, setKeyPath] = useState("");
   const [passphrase, setPassphrase] = useState("");
   const [startupCommand, setStartupCommand] = useState("");
-  const [tmuxMouseOn, setTmuxMouseOn] = useState(false);
 
   const [showJumpHost, setShowJumpHost] = useState(false);
   const [jumpHost, setJumpHost] = useState("");
@@ -278,7 +275,6 @@ export function ConnectionDialog() {
       setKeyPath(editingConnection.keyPath ?? "");
       setPassphrase(editingConnection.passphrase ?? "");
       setStartupCommand(editingConnection.startupCommand ?? "");
-      setTmuxMouseOn(editingConnection.tmuxMouseOn ?? false);
       if (editingConnection.jumpHost) {
         setShowJumpHost(true);
         setJumpHost(editingConnection.jumpHost);
@@ -328,7 +324,6 @@ export function ConnectionDialog() {
           keyPath,
           passphrase,
           startupCommand,
-          tmuxMouseOn,
           filterAuth: true,
         },
         jumpParams,
@@ -406,7 +401,6 @@ export function ConnectionDialog() {
     setKeyPath("");
     setPassphrase("");
     setStartupCommand("");
-    setTmuxMouseOn(false);
     setShowJumpHost(false);
     setJumpHost("");
     setJumpPort("22");
@@ -526,28 +520,6 @@ export function ConnectionDialog() {
               className="col-span-3"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">tmux</Label>
-            <button
-              type="button"
-              className={`col-span-3 flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium transition-colors ${
-                tmuxMouseOn
-                  ? "bg-primary/15 text-primary ring-1 ring-primary/40"
-                  : "bg-accent text-muted-foreground"
-              }`}
-              onClick={() => setTmuxMouseOn((p) => !p)}
-            >
-              <span
-                className={`inline-block size-3 rounded-full border-2 transition-colors ${
-                  tmuxMouseOn
-                    ? "border-primary bg-primary"
-                    : "border-muted-foreground bg-transparent"
-                }`}
-              />
-              Auto-start tmux with mouse support
-            </button>
-          </div>
-
           {/* Jump Host Section */}
           <button
             type="button"

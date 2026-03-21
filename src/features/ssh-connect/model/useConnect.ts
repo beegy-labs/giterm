@@ -14,7 +14,6 @@ interface ConnectParams {
   keyPath?: string;
   passphrase?: string;
   startupCommand?: string;
-  tmuxMouseOn?: boolean;
   jumpHost?: string;
   jumpPort?: number;
   jumpUsername?: string;
@@ -51,7 +50,6 @@ export function useConnect() {
         passphrase:
           params.authMethod === "private-key" ? params.passphrase : undefined,
         startupCommand: params.startupCommand || undefined,
-        tmuxMouseOn: params.tmuxMouseOn || undefined,
         jumpHost: params.jumpHost || undefined,
         jumpPort: params.jumpPort,
         jumpUsername: params.jumpUsername || undefined,

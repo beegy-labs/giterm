@@ -53,32 +53,12 @@ function buildAuthMethod(
       };
 }
 
-/** Build the effective startup command, prepending tmux if enabled */
-function buildStartupCommand(conn: ConnectionConfig): string | null {
-  // Ensure UTF-8 locale for Korean/CJK input.
-  // set_env(LANG) is often rejected by servers without AcceptEnv,
-  // so we export it in the shell as a reliable fallback.
-  const parts: string[] = ["export LANG=en_US.UTF-8 2>/dev/null"];
-  if (conn.tmuxMouseOn) {
-    parts.push(
-      "tmux new-session -A -s main"
-      + " \\; set -g mouse on"
-      + " \\; bind -n WheelUpPane 'if -F \"#{alternate_on}\" \"send-keys -N 3 Up\" \"copy-mode -e\"'"
-      + " \\; bind -n WheelDownPane 'if -F \"#{alternate_on}\" \"send-keys -N 3 Down\" \"\"'",
-    );
-  }
-  if (conn.startupCommand) {
-    parts.push(conn.startupCommand);
-  }
-  return parts.length > 0 ? parts.join(" && ") : null;
-}
-
 function buildSshConfig(conn: ConnectionConfig): SshConnectConfig {
   const config: SshConnectConfig = {
     host: conn.host,
     port: conn.port,
     username: conn.username,
-    startupCommand: buildStartupCommand(conn),
+    startupCommand: conn.startupCommand || null,
     authMethod: buildAuthMethod(
       conn.authMethod,
       conn.password,
