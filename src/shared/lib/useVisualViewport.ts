@@ -171,10 +171,9 @@ export function useVisualViewport() {
         if (cached) {
           applySafeArea(cached.top, cached.bottom);
         } else {
-          el.style.setProperty("--sat", "0px");
-          el.style.setProperty("--sab", "0px");
-          el.style.setProperty("--vvh-safe-bottom", "0px");
-          el.dataset.iosSafeAreaReady = "false";
+          // No native injection yet and no cache — render with 0px safe area.
+          // Native retry loop corrects this at 16–50ms via giterm:safe-area-ready event.
+          applySafeArea(0, 0);
         }
       }
     } else {

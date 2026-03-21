@@ -27,7 +27,8 @@
 | `src/entities/session/model/sessionStore.ts` | Sessions + `selectActiveSession` selector |
 | `src/entities/connection/model/connectionStore.ts` | Connections + `selectConnectionById` selector |
 | `src/shared/adapters/` | credentialApi, sshExecApi, viewportLogApi, tauriStorage |
-| `src/shared/lib/` | types, constants, statusColor, koreanIme, useVisualViewport, cpuSnapshotCache |
+| `src/shared/lib/` | types, constants, statusColor, koreanIme, useVisualViewport, cpuSnapshotCache, iosInputFix |
+| `docs/llm/features/ios-viewport.md` | iOS safe area SSOT (WebKit Bug #191872 + native ObjC fix) |
 
 ## Features
 
@@ -41,13 +42,17 @@
 | Host key verification (unknown/changed) | ✓ |
 | Ad banner slot (AdMob) | ⚠ (UI ready, SDK pending) |
 | App exit cleanup (SSH+tunnels) | ✓ |
+| iOS safe area native fix (WKWebView ObjC) | ✓ |
+| iOS input zoom fix (font-size 16px) | ✓ |
+| Tab switching (overlay pattern) | ✓ |
 | i18n (en/ko/ja) | ⚠ (initialized, not wired) |
 
 ## Dev Commands
 
 | Command | Purpose |
 |---------|---------|
-| `(echo 8; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro) |
+| `(echo 8; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro = index 8) |
+| `(echo 9; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro Max = index 9) |
 | `lsof -ti:1420 \| xargs -r kill -9` | Kill stale Vite port |
 
 ## Full Spec → `docs/llm/apps/giterm.md`
