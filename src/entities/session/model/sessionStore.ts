@@ -133,10 +133,4 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       ),
     }));
   },
-
-
 }));
-
-export const selectSessionByConnectionId =
-  (connectionId: string) => (state: SessionState) =>
-    state.sessions.find((s) => s.connectionId === connectionId);

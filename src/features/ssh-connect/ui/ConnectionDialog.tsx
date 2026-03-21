@@ -5,8 +5,6 @@ import {
   XCircle,
   ChevronDown,
   ChevronRight,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,44 +28,9 @@ import { useConnectDialogStore } from "../model/connectStore";
 import { useConnect } from "../model/useConnect";
 import { useConnectionValidation } from "../model/useConnectionValidation";
 import { sshTestConnection, classifySshError } from "../adapters/api/sshApi";
+import { PasswordInput } from "./PasswordInput";
 
 type TestStatus = "idle" | "testing" | "success" | "failed";
-
-function PasswordInput({
-  id,
-  value,
-  onChange,
-  placeholder,
-  className,
-}: {
-  id: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  className?: string;
-}) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className={`relative ${className ?? ""}`}>
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="pr-9"
-      />
-      <button
-        type="button"
-        tabIndex={-1}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        onClick={() => setShow((p) => !p)}
-      >
-        {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-      </button>
-    </div>
-  );
-}
 
 interface AuthMethodFieldsProps {
   authMethod: AuthMethod;
@@ -349,7 +312,6 @@ export function ConnectionDialog() {
         keyPath,
         passphrase,
         startupCommand,
-        tmuxMouseOn,
         filterAuth: false,
       },
       jumpParams,
@@ -370,7 +332,6 @@ export function ConnectionDialog() {
         keyPath,
         passphrase,
         startupCommand,
-        tmuxMouseOn,
         filterAuth: true,
       },
       jumpParams,
