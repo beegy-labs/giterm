@@ -435,7 +435,7 @@ export function ConnectionDialog() {
             {isEditing ? "Edit Connection" : "New Connection"}
           </DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y]">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="grid gap-4">
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="name" className="pt-2 text-right">
@@ -449,9 +449,9 @@ export function ConnectionDialog() {
                 onBlur={() => markTouched("name")}
                 placeholder="My Server"
               />
-              {errors.name && (
-                <p className="mt-1 text-xs text-destructive">{errors.name}</p>
-              )}
+              <p className={`mt-1 text-xs text-destructive ${!errors.name ? "invisible" : ""}`}>
+                {errors.name ?? "\u00A0"}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
@@ -466,9 +466,9 @@ export function ConnectionDialog() {
                 onBlur={() => markTouched("host")}
                 placeholder="example.com"
               />
-              {errors.host && (
-                <p className="mt-1 text-xs text-destructive">{errors.host}</p>
-              )}
+              <p className={`mt-1 text-xs text-destructive ${!errors.host ? "invisible" : ""}`}>
+                {errors.host ?? "\u00A0"}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
@@ -482,9 +482,9 @@ export function ConnectionDialog() {
                 onChange={(e) => setPort(e.target.value)}
                 onBlur={() => markTouched("port")}
               />
-              {errors.port && (
-                <p className="mt-1 text-xs text-destructive">{errors.port}</p>
-              )}
+              <p className={`mt-1 text-xs text-destructive ${!errors.port ? "invisible" : ""}`}>
+                {errors.port ?? "\u00A0"}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
@@ -498,11 +498,9 @@ export function ConnectionDialog() {
                 onChange={(e) => setUsername(e.target.value)}
                 onBlur={() => markTouched("username")}
               />
-              {errors.username && (
-                <p className="mt-1 text-xs text-destructive">
-                  {errors.username}
-                </p>
-              )}
+              <p className={`mt-1 text-xs text-destructive ${!errors.username ? "invisible" : ""}`}>
+                {errors.username ?? "\u00A0"}
+              </p>
             </div>
           </div>
           <AuthMethodFields
