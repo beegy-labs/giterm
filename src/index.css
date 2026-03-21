@@ -1,0 +1,226 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 2px);
+    --radius-md: var(--radius);
+    --radius-lg: calc(var(--radius) + 4px);
+    --radius-xl: calc(var(--radius) + 8px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+ * Midnight Gentle Study Theme
+ * WCAG 2.1 AAA Compliant | 8pt Grid | Warm Brown Tones
+ * Always dark — terminal-first app
+ */
+:root {
+    --radius: 0.25rem;
+
+    /* Background — Deep Brown Charcoal */
+    --background: #1E1C1A;
+    --foreground: #CCC5BD;
+
+    /* Card — Surface */
+    --card: #282522;
+    --card-foreground: #CCC5BD;
+
+    /* Popover — Surface Container */
+    --popover: #322F2B;
+    --popover-foreground: #CCC5BD;
+
+    /* Primary — Warm Golden Bronze */
+    --primary: #D0B080;
+    --primary-foreground: #1E1C1A;
+
+    /* Secondary — Surface Container */
+    --secondary: #322F2B;
+    --secondary-foreground: #CCC5BD;
+
+    /* Muted — Surface Container */
+    --muted: #322F2B;
+    --muted-foreground: #9A9590;
+
+    /* Accent — Surface Container High */
+    --accent: #3C3835;
+    --accent-foreground: #CCC5BD;
+
+    /* Destructive — Error Red */
+    --destructive: #D9534F;
+
+    /* Border & Input */
+    --border: #3C3835;
+    --input: #3C3835;
+
+    /* Ring — Primary accent for focus */
+    --ring: #D0B080;
+
+    /* Sidebar */
+    --sidebar: #282522;
+    --sidebar-foreground: #CCC5BD;
+    --sidebar-primary: #D0B080;
+    --sidebar-primary-foreground: #1E1C1A;
+    --sidebar-accent: #3C3835;
+    --sidebar-accent-foreground: #CCC5BD;
+    --sidebar-border: #3C3835;
+    --sidebar-ring: #D0B080;
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    html, body {
+        height: 100%;
+        /* NOTE: overflow:hidden intentionally removed.
+         * When overflow:hidden is set on html/body, window.scrollTo(0,0) becomes
+         * a no-op — the browser doesn't translate it to UIScrollView.setContentOffset:(0,0).
+         * Removing it allows JS scroll resets to actually reach the native UIScrollView.
+         * Content overflow is controlled by #root { overflow: hidden } instead. */
+        overscroll-behavior: none;
+    }
+    body {
+        @apply bg-background text-foreground;
+        font-family: system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    #root {
+        height: 100%;
+        overflow: hidden;
+    }
+    html[data-ios-safe-area-ready="false"] #root {
+        visibility: hidden;
+    }
+}
+
+@layer utilities {
+    .rounded-soft {
+        border-radius: 8px;
+    }
+    /*
+     * iOS Keyboard-Safe Full-Screen Overlay — SSOT
+     *
+     * Use on ANY element that must remain full-screen when the iOS keyboard appears:
+     * dialogs, overlays, modals, the main MobileLayout container.
+     *
+     * Uses --app-h (set once by useVisualViewport, updated only on orientation change)
+     * instead of `inset-0` or `100vh`. This prevents shrinking because:
+     *   - `inset-0` (bottom: 0) follows the viewport which MAY resize with keyboard
+     *   - `100vh` may also track the resized viewport in WKWebView
+     *   - `--app-h` is a JS-computed value that NEVER changes when keyboard appears
+     *
+     * Pair with z-index, bg-color etc. as needed:
+     *   <div className="overlay-fullscreen z-50 bg-black/50">
+     */
+    .overlay-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--app-h, 100vh);
+    }
+
+    /*
+     * Mobile Screen Header Pattern (iOS safe area)
+     *
+     * Use on the HEADER/BAR element, NOT on the outer screen container.
+     * This lets the header background fill behind the Dynamic Island/status bar
+     * while text appears just below it — native iOS look.
+     *
+     * - pt-safe-bar  : for compact bars (toolbar, tab bar) — safe area only
+     * - pt-safe-header: for page headers with standard 12px top padding
+     */
+    /*
+     * --sat / --sab: safe area top/bottom, injected by Rust native code
+     * BEFORE the first render (avoids WebKit Bug #191872 where env()
+     * starts at 0 and settles 163ms–7s later, causing a layout jump).
+     * Never fall back to env() here. WebKit Bug #191872 applies env() late and
+     * would reflow the fixed layout several seconds after launch.
+     */
+    .pt-safe-bar {
+        padding-top: var(--sat, 0px);
+    }
+    .pt-safe-header {
+        padding-top: calc(var(--sat, 0px) + 0.25rem);
+    }
+}
+
+/*
+ * iOS WKWebView caret misalignment fix
+ *
+ * Root cause: When an <input> is focused inside a fixed/modal dialog on iOS,
+ * WKWebView's internal UIScrollView auto-scrolls to bring the input into view.
+ * This shifts the layout viewport coordinate system while the caret position
+ * is computed in the pre-scroll system — causing the caret to render below
+ * the actual input field.
+ *
+ * Fix (WebKit bug #176896 workaround): A momentary opacity change on focus
+ * prevents WKWebView from triggering its scroll-to-focus adjustment. The
+ * animation completes in 10ms — invisible to the user, but enough to suppress
+ * the auto-scroll that causes the coordinate mismatch.
+ *
+ * Source: https://gist.github.com/kiding/72721a0553fa93198ae2bb6eefaa3299
+ */
+@keyframes ios-caret-fix {
+    from { opacity: 0.9999; }
+    to   { opacity: 1; }
+}
+
+input:focus,
+textarea:focus {
+    animation: ios-caret-fix 0.01s;
+}
+
+/*
+ * iOS WKWebView Input Focus-Zoom Prevention — SSOT
+ *
+ * Root cause: iOS applies an automatic "focus zoom" when a focused input has
+ * computed font-size < 16px. This is a SEPARATE behavior from pinch-zoom and
+ * is NOT prevented by viewport meta (user-scalable=no, maximum-scale=1).
+ *
+ * Fix: Force 16px minimum on ALL form controls using @supports to target iOS
+ * WebKit only. Uses !important to override Tailwind utility classes (e.g.
+ * text-sm = 14px) that would otherwise win by specificity.
+ *
+ * Reference:
+ *   - https://css-tricks.com/16px-or-larger-text-prevents-ios-form-zoom/
+ *   - https://weblog.west-wind.com/posts/2023/Apr/17/Preventing-iOS-Textbox-Auto-Zooming-and-ViewPort-Sizing
+ *   - https://defensivecss.dev/tip/input-zoom-safari/
+ */
+@supports (-webkit-touch-callout: none) {
+    input, textarea, select, [role="combobox"], [data-slot="select-trigger"] {
+        font-size: 16px !important;
+        touch-action: manipulation;
+    }
+}

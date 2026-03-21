@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for giterm",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "store:default",
+    "log:default"
+  ]
+}
