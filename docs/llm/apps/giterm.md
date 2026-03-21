@@ -139,10 +139,14 @@ Tauri overwrites `CFBundleVersion` on every build — fixed by the Xcode post-bu
 - **StrictMode + Tauri `listen()`**: `subscribeSshData`/`subscribeSshDisconnect` adapter uses `cancelled` flag pattern.
 - **Korean IME**: Single-input, `value=""` reset. See `docs/llm/features/korean-ime.md`.
 - **iOS caret**: 10-layer fix. See `docs/llm/features/ios-caret-fix.md`.
-- **iOS viewport**: `inputMode="none"` on HiddenImeInput; `useVisualViewport` sets `--vvh` on `<html>`.
+- **iOS viewport shrink (WebKit Bug #191872)**: WKWebView physically resizes layout viewport when safe area settles (e.g. 840→778px, ~3–7s after launch). Fixed via native ObjC retry loop: `setMinimumViewportInset`, pin frame to window bounds, neutralize UIViewController `additionalSafeAreaInsets`. See `docs/llm/features/ios-viewport.md`.
+- **iOS safe area CSS**: `env(safe-area-inset-*)` starts at 0 and settles late — NEVER use for layout. Use `--sat`/`--sab` CSS vars injected by native code before first paint. `pt-safe-bar`/`pt-safe-header` use `var(--sat)` only.
+- **Safe area placement**: `pt-safe-bar` on **individual headers** (MobileScreen.Header, MobileSessionTabBar) only — NEVER on MobileLayout container. Container padding reduces flex children's available space causing visible shrink.
+- **iOS input zoom**: WKWebView auto-zooms inputs with font-size < 16px. Fixed via `@supports (-webkit-touch-callout: none) { font-size: 16px }`. See `src/shared/lib/iosInputFix.ts` for scroll-into-view SSOT.
 - **`focus()` in beforeinput**: iOS WKWebView does NOT immediately transfer first responder.
 - **iOS keyboard resize**: ResizeObserver `fit()` debounced 100ms, `sshResize()` debounced 150ms in `useTerminalInstances` + dedup cache in `sshApi.ts`. `useVisualViewport` `--vvh` updates debounced 100ms.
+- **Tab switching**: TerminalView uses overlay pattern (absolute overlays) not early returns — early returns unmount the container div, destroying ALL xterm instances. MobileLayout uses `hidden` class toggling, not conditional rendering.
+- **WebGL on iOS**: Skip WebGL addon on mobile — iOS has a hard limit on WebGL contexts. `useTerminalInstances` checks `isMobile` before creating WebGL renderer.
 - **Credentials**: Passwords stored in tauriStorage JSON (reliable across restarts). OS keychain via Rust `keyring` crate as fallback (`loadSecrets()`). `SECRET_FIELDS` (FE) ↔ `ALLOWED_FIELDS` (BE) must stay in sync.
 - **App exit cleanup**: `RunEvent::Exit` handler calls `SshSessionManager::disconnect_all()` + `TunnelManager::stop_all()` + debug log `cleanup()`.
-- **Safe area**: `pt-safe-bar` on MobileLayout root only. Children (MobileSessionTabBar, MobileScreen.Header/Bar) must NOT duplicate safe area padding.
 - **ErrorBoundary**: Class component wrapping app root (React 19 requirement).
