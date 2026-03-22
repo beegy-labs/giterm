@@ -92,3 +92,18 @@ targets:
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+    postBuildScripts:
+      - script: |
+          BUILD_NUM_FILE="${SRCROOT}/../../../.build_number"
+          if [ -f "$BUILD_NUM_FILE" ]; then
+            BUILD_NUM=$(cat "$BUILD_NUM_FILE" | tr -d '[:space:]')
+            BUNDLE_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
+            if [ -f "$BUNDLE_PLIST" ]; then
+              /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUM" "$BUNDLE_PLIST"
+              echo "[giterm] CFBundleVersion patched to $BUILD_NUM in bundle"
+            else
+              echo "[giterm] bundle plist not found at $BUNDLE_PLIST"
+            fi
+          fi
+        name: Patch Build Number
+        basedOnDependencyAnalysis: false
