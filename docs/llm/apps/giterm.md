@@ -83,10 +83,7 @@ src-tauri/src/
 | `ssh_host_key_verify_respond` | FE→BE | Accept/reject host key (HostKeyVerifyDialog) |
 | `credential_store/get/delete/delete_all` | FE→BE | OS keychain CRUD |
 | `tunnel_start` / `tunnel_stop` | FE→BE | Local port forwarding |
-| `admob_init` | FE→BE | Initialize GADMobileAds SDK (iOS only, ObjC2 runtime) |
-| `admob_banner_show` | FE→BE | Create GADBannerView, add to UIWindow, load ad |
-| `admob_banner_hide` | FE→BE | `[banner removeFromSuperview]` |
-| `admob_banner_is_visible` | FE→BE | Check BANNER_PTR static pointer |
+| `admob_init` / `admob_banner_show` / `admob_banner_hide` / `admob_banner_is_visible` | FE→BE | AdMob SDK init + GADBannerView lifecycle (iOS ObjC2 runtime) |
 | `ime_log_start/append/stop` | FE→BE | Dev IME file logging |
 | `vp_log_start/append/stop` | FE→BE | Dev viewport file logging |
 | `ssh-data` event | BE→FE | Stream remote output |
@@ -102,7 +99,7 @@ src-tauri/src/
 | terminalSettingsStore | entities/session/ | tauriStorage (tauri-plugin-store, fontSize) | |
 | tunnelStore | entities/tunnel/ | Memory (max 20) | `addTunnel` returns `boolean` |
 
-Server stats use TanStack Query (`features/server-monitor/model/useServerStats.ts`) with `staleTime: 4s`, `refetchInterval: 5s`. CPU delta cache in `shared/lib/cpuSnapshotCache.ts`.
+Server stats: TanStack Query, `staleTime: 4s`, `refetchInterval: 5s`, CPU delta cache in `shared/lib/cpuSnapshotCache.ts`.
 
 ## Multi-Session
 
@@ -113,20 +110,9 @@ Server stats use TanStack Query (`features/server-monitor/model/useServerStats.t
 - Tab switch: `display:none/block` — no re-creation (preserves scrollback)
 - xterm.js scrollback: 1000 (mobile) / 5000 (desktop)
 
-## Touch & KeyboardToolbar
-
-- Tap: focus IME / cursor to col | Long-press+drag: selection → Copy | Vertical drag: scroll/arrows
-- Toolbar: `[⌨/가/조합]` `[scrollable keys]` `[▼ panel]` — panels: Tmux, Vi, Fn (F1-F12)
-
 ## Development
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm tauri dev` | Desktop dev |
-| `(echo 9; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro Max = index 9) |
-| `lsof -ti:1420 \| xargs -r kill -9` | Kill stale Vite port |
-| `pnpm test:run` | Vitest |
-| `cargo check --manifest-path src-tauri/Cargo.toml` | Rust check |
+See `CLAUDE.md` for full command list. iOS-specific: `(echo 9; sleep 600) | pnpm tauri ios dev` (iPhone 17 Pro Max). Kill stale port: `lsof -ti:1420 | xargs -r kill -9`.
 
 ## iOS Build
 
@@ -137,40 +123,27 @@ Server stats use TanStack Query (`features/server-monitor/model/useServerStats.t
 | Required capabilities | arm64, metal |
 | Team ID | `4VF752P8A8` (Apple Distribution: JAEYOUNG LEE) |
 | Build command | `pnpm tauri ios build` |
-| Build number policy | `YYMMDD.N` (년월일.배포수) — e.g. `260322.1` |
+| Build number policy | `YYMMDDHH.N` (년월일시.배포수) — e.g. `26030516.4` |
 | Build number file | `.build_number` (gitignored — set locally before each release build) |
 | Signing | `CODE_SIGN_STYLE: Automatic` in `project.yml` |
 | Upload | Transporter app (drag `.ipa` from `src-tauri/gen/apple/build/arm64/`) |
 
-**Build number mechanism**: Tauri's xcode-script overwrites `CFBundleVersion` with
-`tauri.conf.json` version on every build. Fixed by a `postBuildScripts` entry in
-`src-tauri/gen/apple/project.yml` that patches the bundle's Info.plist with the value
-from `.build_number` — runs after ProcessInfoPlistFile, before CodeSign.
+**Build number**: Tauri overwrites `CFBundleVersion` — fixed by `postBuildScripts` in `project.yml` that patches bundle Info.plist from `.build_number` file (runs after ProcessInfoPlistFile, before CodeSign).
 
-**libapp.a conflict prevention**: `src-tauri/gen/apple/project.yml` does NOT include
-`- path: Externals` in sources. `LIBRARY_SEARCH_PATHS` handles linker discovery.
-After a release build, `Externals/arm64/release/libapp.a` is created — dev builds will
-fail if this coexists with `Externals/arm64/debug/libapp.a` (duplicate copy commands).
-Clean with: `rm -rf src-tauri/gen/apple/Externals/arm64/release/`
+**libapp.a conflict**: `project.yml` excludes `- path: Externals` from sources. After release build, delete `Externals/arm64/release/` before dev builds to avoid "Multiple commands produce libapp.a".
 
 ## Known Pitfalls
 
-- **AdMob simulator**: `GADMobileAds class not found` in iOS simulator is expected — CocoaPods links correctly on device builds. The ObjC2 runtime approach (`AnyClass::get(c"GADMobileAds")`) handles this gracefully (logs warning, returns without crash).
-- **AdMob Info.plist**: `GADApplicationIdentifier` key is REQUIRED — app crashes on launch without it. Defined in `project.yml` `info.properties` so it survives `xcodegen generate`.
-- **StrictMode + Tauri `listen()`**: `subscribeSshData`/`subscribeSshDisconnect` adapter uses `cancelled` flag pattern.
 - **Korean IME**: Single-input, `value=""` reset. See `docs/llm/features/korean-ime.md`.
+- **iOS viewport shrink**: WebKit Bug #191872, native ObjC fix. See `docs/llm/features/ios-viewport.md`.
+- **iOS safe area CSS**: NEVER use `env(safe-area-inset-*)`. Use `--sat`/`--sab` only. `pt-safe-bar` on individual headers — NEVER on MobileLayout container.
 - **iOS caret**: 10-layer fix. See `docs/llm/features/ios-caret-fix.md`.
-- **iOS viewport shrink (WebKit Bug #191872)**: WKWebView physically resizes layout viewport when safe area settles (e.g. 840→778px, ~3–7s after launch). Fixed via native ObjC retry loop: `setMinimumViewportInset`, pin frame to window bounds, neutralize UIViewController `additionalSafeAreaInsets`. See `docs/llm/features/ios-viewport.md`.
-- **iOS safe area CSS**: `env(safe-area-inset-*)` starts at 0 and settles late — NEVER use for layout. Use `--sat`/`--sab` CSS vars injected by native code before first paint. `pt-safe-bar`/`pt-safe-header` use `var(--sat)` only.
-- **Safe area placement**: `pt-safe-bar` on **individual headers** (MobileScreen.Header, MobileSessionTabBar) only — NEVER on MobileLayout container. Container padding reduces flex children's available space causing visible shrink.
-- **iOS input zoom**: WKWebView auto-zooms inputs with font-size < 16px. Fixed via `@supports (-webkit-touch-callout: none) { font-size: 16px }`. See `src/shared/lib/iosInputFix.ts` for scroll-into-view SSOT.
-- **`focus()` in beforeinput**: iOS WKWebView does NOT immediately transfer first responder.
-- **iOS keyboard resize**: ResizeObserver `fit()` debounced 100ms, `sshResize()` debounced 150ms in `useTerminalInstances` + dedup cache in `sshApi.ts`. `useVisualViewport` `--vvh` updates debounced 100ms.
-- **Tab switching**: TerminalView uses overlay pattern (absolute overlays) not early returns — early returns unmount the container div, destroying ALL xterm instances. MobileLayout uses `hidden` class toggling, not conditional rendering.
-- **WebGL on iOS**: Skip WebGL addon on mobile — iOS has a hard limit on WebGL contexts. `useTerminalInstances` checks `isMobile` before creating WebGL renderer.
-- **Credentials**: Passwords stored in tauriStorage JSON (reliable across restarts). OS keychain via Rust `keyring` crate as fallback (`loadSecrets()`). `SECRET_FIELDS` (FE) ↔ `ALLOWED_FIELDS` (BE) must stay in sync.
-- **App exit cleanup**: `RunEvent::Exit` handler calls `SshSessionManager::disconnect_all()` + `TunnelManager::stop_all()` + debug log `cleanup()`.
-- **ErrorBoundary**: Class component wrapping app root (React 19 requirement).
-- **iOS dev mode — WKWebView origin**: WKWebView loads via `tauri://localhost` (NOT `http://127.0.0.1:1420`). Tauri scheme handler proxies `tauri://localhost/*` → devUrl via reqwest. `fetch('/src/main.tsx')` returns HTTP 200 (proxy works), BUT `<script type="module" src="/src/main.tsx">` does NOT execute → React never mounts → white screen. **Root cause unresolved** as of 2026-03-22. Investigation: inline scripts run, inline module scripts run, only external module src fails.
-- **iOS dev mode — devUrl must be `127.0.0.1`**: `devUrl: "http://localhost:1420"` causes reqwest to resolve `localhost` → `127.0.0.1` (IPv4) while Vite binds to `::1` (IPv6, `host: false`) → ECONNREFUSED. Fix: `devUrl: "http://127.0.0.1:1420"` + `vite.config.ts host: "0.0.0.0"` (current state).
-- **iOS dev mode — Vite host**: Must be `"0.0.0.0"` (IPv4 wildcard) not `false` (IPv6 only). Set via `TAURI_DEV_HOST` env or vite.config.ts fallback.
+- **iOS input zoom**: font-size < 16px triggers zoom. Fixed in `src/shared/lib/iosInputFix.ts`.
+- **iOS keyboard resize**: `fit()` debounced 100ms, `sshResize()` 150ms, `--vvh` 100ms.
+- **WebGL on iOS**: hard context limit — skip WebGL addon on mobile (`isMobile` in `useTerminalInstances`).
+- **Tab switching**: overlay pattern only — conditional render destroys xterm instances.
+- **AdMob simulator**: `GADMobileAds class not found` is expected (graceful ObjC2 no-op). `GADApplicationIdentifier` in `project.yml info.properties` required or app crashes on launch.
+- **Credentials**: `SECRET_FIELDS` (FE) ↔ `ALLOWED_FIELDS` (BE) must stay in sync. `loadSecrets()` enriches from keychain at connect time.
+- **StrictMode + `listen()`**: adapter uses `cancelled` flag to prevent double-subscription.
+- **App exit**: `RunEvent::Exit` → `disconnect_all()` + `stop_all()` + debug `cleanup()`.
+- **iOS dev mode**: `devUrl: "http://127.0.0.1:1420"` + `vite host: "0.0.0.0"` required. External `<script type="module" src=...>` does NOT execute in WKWebView (unresolved 2026-03-22).

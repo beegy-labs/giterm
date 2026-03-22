@@ -47,12 +47,4 @@
 | Tab switching (overlay pattern) | ✓ |
 | i18n (en/ko/ja) | ⚠ (initialized, not wired) |
 
-## Dev Commands
-
-| Command | Purpose |
-|---------|---------|
-| `(echo 8; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro = index 8) |
-| `(echo 9; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro Max = index 9) |
-| `lsof -ti:1420 \| xargs -r kill -9` | Kill stale Vite port |
-
 ## Full Spec → `docs/llm/apps/giterm.md`
