@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Plus, Terminal, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
+import { EmptyState } from "@/shared/ui/empty-state";
 import {
   useConnectionStore,
   ConnectionItem,
@@ -75,12 +76,11 @@ export function Sidebar() {
       <ScrollArea className="flex-1">
         <div className="p-2">
           {connections.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Terminal className="size-10 text-primary/30" />
-              <p className="text-center text-xs text-muted-foreground">
-                No saved connections
-              </p>
-            </div>
+            <EmptyState
+              icon={<Terminal className="size-10 text-primary/30" />}
+              message="No saved connections"
+              className="py-8"
+            />
           ) : (
             connections.map((conn) => {
               const count = countByConnection.get(conn.id) ?? 0;

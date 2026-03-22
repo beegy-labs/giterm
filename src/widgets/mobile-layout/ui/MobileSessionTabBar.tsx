@@ -1,6 +1,6 @@
 import { Plus, X, List } from "lucide-react";
 import { DevFrame } from "@/shared/ui/dev-frame";
-import { statusColor } from "@/shared/lib/statusColor";
+import { StatusDot } from "@/shared/ui/status-dot";
 import { useConnectDialogStore, closeSession } from "@/features/ssh-connect";
 import { useSessionStore, MAX_SESSIONS } from "@/entities/session";
 
@@ -37,9 +37,7 @@ export function MobileSessionTabBar({
             }`}
             onClick={() => setActiveIndex(i)}
           >
-            <span
-              className={`size-1.5 rounded-full ${statusColor(s.status)}`}
-            />
+            <StatusDot status={s.status} />
             <span className="max-w-20 truncate">{s.connectionName}</span>
             <button
               className="flex size-3.5 items-center justify-center rounded-sm text-muted-foreground active:bg-accent"

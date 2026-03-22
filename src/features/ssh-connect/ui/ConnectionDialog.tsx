@@ -14,7 +14,8 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { FormField } from "@/shared/ui/form-field";
+import { InlineAlert } from "@/shared/ui/inline-alert";
 import {
   Select,
   SelectContent,
@@ -42,7 +43,7 @@ interface AuthMethodFieldsProps {
   passphrase: string;
   onPassphraseChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   idPrefix: string;
-  labelClassName?: string;
+  labelClassName?: string; // forwarded to FormField
 }
 
 function AuthMethodFields({
@@ -55,17 +56,16 @@ function AuthMethodFields({
   passphrase,
   onPassphraseChange,
   idPrefix,
-  labelClassName = "pt-2 text-right",
+  labelClassName,
 }: AuthMethodFieldsProps) {
   return (
     <>
-      <div className="grid grid-cols-4 items-start gap-4">
-        <Label className={labelClassName}>Auth</Label>
+      <FormField label="Auth" labelClassName={labelClassName}>
         <Select
           value={authMethod}
           onValueChange={(v) => onAuthMethodChange(v as AuthMethod)}
         >
-          <SelectTrigger className="col-span-3">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -73,45 +73,33 @@ function AuthMethodFields({
             <SelectItem value="private-key">Private Key</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FormField>
       {authMethod === "password" ? (
-        <div className="grid grid-cols-4 items-start gap-4">
-          <Label htmlFor={`${idPrefix}Password`} className={labelClassName}>
-            Password
-          </Label>
+        <FormField label="Password" htmlFor={`${idPrefix}Password`} labelClassName={labelClassName}>
           <PasswordInput
             id={`${idPrefix}Password`}
             value={password}
             onChange={onPasswordChange}
-            className="col-span-3"
           />
-        </div>
+        </FormField>
       ) : (
         <>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor={`${idPrefix}KeyPath`} className={labelClassName}>
-              Key Path
-            </Label>
+          <FormField label="Key Path" htmlFor={`${idPrefix}KeyPath`} labelClassName={labelClassName}>
             <Input
               id={`${idPrefix}KeyPath`}
               value={keyPath}
               onChange={onKeyPathChange}
               placeholder="~/.ssh/id_ed25519"
-              className="col-span-3"
             />
-          </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor={`${idPrefix}Passphrase`} className={labelClassName}>
-              Passphrase
-            </Label>
+          </FormField>
+          <FormField label="Passphrase" htmlFor={`${idPrefix}Passphrase`} labelClassName={labelClassName}>
             <PasswordInput
               id={`${idPrefix}Passphrase`}
               value={passphrase}
               onChange={onPassphraseChange}
               placeholder="Optional"
-              className="col-span-3"
             />
-          </div>
+          </FormField>
         </>
       )}
     </>
@@ -392,72 +380,40 @@ export function ConnectionDialog() {
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="grid gap-4">
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="name" className="pt-2 text-right">
-              Name
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => markTouched("name")}
-                placeholder="My Server"
-              />
-              <p className={`mt-1 text-xs text-destructive ${!errors.name ? "invisible" : ""}`}>
-                {errors.name ?? "\u00A0"}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="host" className="pt-2 text-right">
-              Host
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="host"
-                value={host}
-                onChange={(e) => setHost(e.target.value)}
-                onBlur={() => markTouched("host")}
-                placeholder="example.com"
-              />
-              <p className={`mt-1 text-xs text-destructive ${!errors.host ? "invisible" : ""}`}>
-                {errors.host ?? "\u00A0"}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="port" className="pt-2 text-right">
-              Port
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="port"
-                value={port}
-                onChange={(e) => setPort(e.target.value)}
-                onBlur={() => markTouched("port")}
-              />
-              <p className={`mt-1 text-xs text-destructive ${!errors.port ? "invisible" : ""}`}>
-                {errors.port ?? "\u00A0"}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="username" className="pt-2 text-right">
-              Username
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onBlur={() => markTouched("username")}
-              />
-              <p className={`mt-1 text-xs text-destructive ${!errors.username ? "invisible" : ""}`}>
-                {errors.username ?? "\u00A0"}
-              </p>
-            </div>
-          </div>
+          <FormField label="Name" htmlFor="name" error={errors.name ?? ""}>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => markTouched("name")}
+              placeholder="My Server"
+            />
+          </FormField>
+          <FormField label="Host" htmlFor="host" error={errors.host ?? ""}>
+            <Input
+              id="host"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              onBlur={() => markTouched("host")}
+              placeholder="example.com"
+            />
+          </FormField>
+          <FormField label="Port" htmlFor="port" error={errors.port ?? ""}>
+            <Input
+              id="port"
+              value={port}
+              onChange={(e) => setPort(e.target.value)}
+              onBlur={() => markTouched("port")}
+            />
+          </FormField>
+          <FormField label="Username" htmlFor="username" error={errors.username ?? ""}>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onBlur={() => markTouched("username")}
+            />
+          </FormField>
           <AuthMethodFields
             authMethod={authMethod}
             onAuthMethodChange={setAuthMethod}
@@ -469,18 +425,14 @@ export function ConnectionDialog() {
             onPassphraseChange={(e) => setPassphrase(e.target.value)}
             idPrefix=""
           />
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="startupCommand" className="pt-2 text-right">
-              Startup
-            </Label>
+          <FormField label="Startup" htmlFor="startupCommand">
             <Input
               id="startupCommand"
               value={startupCommand}
               onChange={(e) => setStartupCommand(e.target.value)}
               placeholder="e.g. cd /app && ls"
-              className="col-span-3"
             />
-          </div>
+          </FormField>
           {/* Jump Host Section */}
           <button
             type="button"
@@ -496,40 +448,28 @@ export function ConnectionDialog() {
           </button>
           {showJumpHost && (
             <>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="jumpHost" className="pt-2 text-right text-xs">
-                  Host
-                </Label>
+              <FormField label="Host" htmlFor="jumpHost" labelClassName="pt-2 text-right text-xs">
                 <Input
                   id="jumpHost"
                   value={jumpHost}
                   onChange={(e) => setJumpHost(e.target.value)}
                   placeholder="jump.example.com"
-                  className="col-span-3"
                 />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="jumpPort" className="pt-2 text-right text-xs">
-                  Port
-                </Label>
+              </FormField>
+              <FormField label="Port" htmlFor="jumpPort" labelClassName="pt-2 text-right text-xs">
                 <Input
                   id="jumpPort"
                   value={jumpPort}
                   onChange={(e) => setJumpPort(e.target.value)}
-                  className="col-span-3"
                 />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="jumpUsername" className="pt-2 text-right text-xs">
-                  Username
-                </Label>
+              </FormField>
+              <FormField label="Username" htmlFor="jumpUsername" labelClassName="pt-2 text-right text-xs">
                 <Input
                   id="jumpUsername"
                   value={jumpUsername}
                   onChange={(e) => setJumpUsername(e.target.value)}
-                  className="col-span-3"
                 />
-              </div>
+              </FormField>
               <AuthMethodFields
                 authMethod={jumpAuthMethod}
                 onAuthMethodChange={setJumpAuthMethod}
@@ -546,15 +486,14 @@ export function ConnectionDialog() {
           )}
 
           {(error || testError) && (
-            <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
-              {error || testError}
-            </div>
+            <InlineAlert variant="error" message={error || testError} />
           )}
           {testStatus === "success" && (
-            <div className="flex items-center gap-2 rounded-sm bg-primary/10 p-3 text-sm text-primary">
-              <CheckCircle2 className="size-4" />
-              Connection successful
-            </div>
+            <InlineAlert
+              variant="success"
+              message="Connection successful"
+              icon={<CheckCircle2 className="size-4" />}
+            />
           )}
           </div>
         </div>

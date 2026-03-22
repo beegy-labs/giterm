@@ -1,15 +1,5 @@
-import { Terminal, Trash2, Play, Pencil, Copy } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/shared/ui/alert-dialog";
+import { Terminal, Play, Pencil, Copy } from "lucide-react";
+import { DeleteConfirmButton } from "@/shared/ui/delete-confirm-button";
 import type { ConnectionConfig } from "../model/connectionStore";
 
 interface ConnectionItemProps {
@@ -21,44 +11,6 @@ interface ConnectionItemProps {
   onEdit: () => void;
   onRemove: () => void;
   onDuplicate?: () => void;
-}
-
-function DeleteConfirmButton({
-  onConfirm,
-  className,
-  iconSize = "size-3.5",
-}: {
-  onConfirm: () => void;
-  className: string;
-  iconSize?: string;
-}) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button
-          className={className}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Trash2 className={`${iconSize} text-destructive`} />
-        </button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Connection</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently remove the connection. This action cannot be
-            undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm}>
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
 }
 
 export function ConnectionItem({

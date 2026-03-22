@@ -2,6 +2,7 @@ import { Plus, Terminal } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { MobileScreen } from "@/shared/ui/mobile-screen";
+import { EmptyState } from "@/shared/ui/empty-state";
 import {
   useConnectDialogStore,
   startSession,
@@ -41,16 +42,16 @@ export function MobileConnectionList({ onBack }: { onBack?: () => void }) {
       <ScrollArea className="flex-1 [touch-action:pan-y]">
         <div className="flex flex-col gap-4 p-4">
           {connections.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 py-16">
-              <Terminal className="size-16 text-primary/20" />
-              <p className="text-base text-muted-foreground">
-                No saved connections
-              </p>
-              <Button onClick={() => setDialogOpen(true)}>
-                <Plus className="size-4" />
-                Add Connection
-              </Button>
-            </div>
+            <EmptyState
+              icon={<Terminal className="size-16 text-primary/20" />}
+              message="No saved connections"
+              action={
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="size-4" />
+                  Add Connection
+                </Button>
+              }
+            />
           ) : (
             connections.map((conn) => (
               <ConnectionItem

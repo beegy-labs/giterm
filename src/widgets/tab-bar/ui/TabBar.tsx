@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { StatusDot } from "@/shared/ui/status-dot";
 import { useSessionStore, MAX_SESSIONS } from "@/entities/session";
 import { useConnectDialogStore } from "@/features/ssh-connect";
-import { statusColor } from "@/shared/lib/statusColor";
 
 interface TabBarProps {
   onCloseSession?: (sessionId: string) => void;
@@ -96,9 +96,7 @@ export function TabBar({ onCloseSession }: TabBarProps) {
               : ""
           }`}
         >
-          <span
-            className={`inline-block size-2 shrink-0 rounded-full ${statusColor(session.status)}`}
-          />
+          <StatusDot status={session.status} className="size-2" />
           <span className="max-w-24 truncate">
             {session.connectionName || "Terminal"}
           </span>
