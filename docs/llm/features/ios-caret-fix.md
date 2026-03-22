@@ -1,6 +1,6 @@
 # iOS WKWebView Layout & Caret Fix Policy
 
-> WKWebView scroll/layout bugs on iOS | **Last Updated**: 2026-03-12
+> WKWebView scroll/layout bugs on iOS | **Last Updated**: 2026-03-23
 
 ## Symptoms
 
@@ -86,7 +86,7 @@ Suppresses WKWebView's scroll-to-focus trigger on input focus (10ms, invisible).
 
 | Avoid | Reason |
 |-------|--------|
-| `pt-safe` on children when MobileLayout has it | Double safe area padding; MobileLayout is SSOT |
+| `pt-safe` on `MobileLayout` container | Shrinks children's space; padding on headers only |
 | `transform: translate(-50%, -50%)` on modal | Caret rendered pre-transform (WebKit #176896) |
 | `transform` on `position:fixed` MobileLayout | Breaks touch coordinate system |
 | `100dvh` as `--vvh` fallback | In Tauri WKWebView, `dvh = vh = innerHeight` |
