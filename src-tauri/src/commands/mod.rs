@@ -1,3 +1,4 @@
+pub mod admob;
 pub mod credential;
 pub mod debug_log;
 pub mod ssh;
@@ -5,6 +6,7 @@ pub mod tunnel;
 pub mod ime_log;
 pub mod viewport_log;
 
+pub use admob::{admob_init, admob_banner_show, admob_banner_hide, admob_banner_is_visible};
 pub use credential::{credential_store, credential_get, credential_delete, credential_delete_all};
 pub use ssh::{ssh_connect, ssh_disconnect, ssh_exec, ssh_host_key_verify_respond, ssh_resize, ssh_test_connection, ssh_write};
 pub use tunnel::{tunnel_start, tunnel_stop};

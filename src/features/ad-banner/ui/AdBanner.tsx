@@ -1,28 +1,36 @@
-import { DevFrame } from "@/shared/ui/dev-frame";
 import { useAdBannerStore } from "../model/adBannerStore";
-
-/** Standard mobile banner height (50pt) */
-const BANNER_HEIGHT = 50;
+import { useAdBanner } from "../model/useAdBanner";
 
 /**
- * AdBanner — fixed-height slot for AdMob banner ads.
+ * AdBanner — mounts the AdMob banner logic.
  *
- * Collapses to zero height when no ad is loaded.
- * TODO: Replace placeholder with actual AdMob SDK integration.
+ * The actual native banner view is managed by the ObjC bridge (AdMobBridge.m).
+ * This component only handles:
+ *   - SDK init + display logic via useAdBanner()
+ *   - Exposing setAdsEnabled for the settings UI
+ *
+ * No visible DOM element is rendered here — the banner is a native UIView.
  */
 export function AdBanner() {
-  const isAdLoaded = useAdBannerStore((s) => s.isAdLoaded);
+  useAdBanner(); // side-effects only
+  return null;
+}
 
-  if (!isAdLoaded) return null;
+/** Small toggle for settings — lets the user disable ads */
+export function AdToggle({ className }: { className?: string }) {
+  const adsEnabled = useAdBannerStore((s) => s.adsEnabled);
+  const setAdsEnabled = useAdBannerStore((s) => s.setAdsEnabled);
 
   return (
-    <DevFrame
-      name="AdBanner"
-      className="shrink-0 flex items-center justify-center border-b border-border bg-card/50"
-      style={{ height: BANNER_HEIGHT }}
+    <button
+      type="button"
+      onClick={() => setAdsEnabled(!adsEnabled)}
+      className={`flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground ${className ?? ""}`}
     >
-      {/* AdMob banner will be rendered here */}
-      <span className="text-xs text-muted-foreground">Ad</span>
-    </DevFrame>
+      <span
+        className={`inline-block size-1.5 rounded-full ${adsEnabled ? "bg-primary" : "bg-muted-foreground/40"}`}
+      />
+      {adsEnabled ? "ads on" : "ads off"}
+    </button>
   );
 }
