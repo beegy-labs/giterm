@@ -5,7 +5,7 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import { MobileScreen } from "@/shared/ui/mobile-screen";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
-import { AdToggle } from "@/features/ad-banner";
+import { AdToggle, AdDevPanel } from "@/features/ad-banner";
 import {
   useConnectDialogStore,
   startSession,
@@ -108,9 +108,10 @@ export function MobileConnectionList({ onBack }: { onBack?: () => void }) {
         </div>
       </ScrollArea>
 
-      {/* Footer: ad toggle */}
-      <div className="shrink-0 border-t border-border px-4 py-2">
+      {/* Footer: ad toggle + dev panel */}
+      <div className="shrink-0 border-t border-border px-4 py-3 space-y-3">
         <AdToggle />
+        <AdDevPanel />
       </div>
     </MobileScreen>
   );
