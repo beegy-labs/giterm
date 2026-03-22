@@ -43,7 +43,6 @@ interface AuthMethodFieldsProps {
   passphrase: string;
   onPassphraseChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   idPrefix: string;
-  labelClassName?: string; // forwarded to FormField
 }
 
 function AuthMethodFields({
@@ -56,11 +55,10 @@ function AuthMethodFields({
   passphrase,
   onPassphraseChange,
   idPrefix,
-  labelClassName,
 }: AuthMethodFieldsProps) {
   return (
     <>
-      <FormField label="Auth" labelClassName={labelClassName}>
+      <FormField label="Authentication">
         <Select
           value={authMethod}
           onValueChange={(v) => onAuthMethodChange(v as AuthMethod)}
@@ -75,7 +73,7 @@ function AuthMethodFields({
         </Select>
       </FormField>
       {authMethod === "password" ? (
-        <FormField label="Password" htmlFor={`${idPrefix}Password`} labelClassName={labelClassName}>
+        <FormField label="Password" htmlFor={`${idPrefix}Password`}>
           <PasswordInput
             id={`${idPrefix}Password`}
             value={password}
@@ -84,7 +82,7 @@ function AuthMethodFields({
         </FormField>
       ) : (
         <>
-          <FormField label="Key Path" htmlFor={`${idPrefix}KeyPath`} labelClassName={labelClassName}>
+          <FormField label="Key Path" htmlFor={`${idPrefix}KeyPath`}>
             <Input
               id={`${idPrefix}KeyPath`}
               value={keyPath}
@@ -92,7 +90,7 @@ function AuthMethodFields({
               placeholder="~/.ssh/id_ed25519"
             />
           </FormField>
-          <FormField label="Passphrase" htmlFor={`${idPrefix}Passphrase`} labelClassName={labelClassName}>
+          <FormField label="Passphrase" htmlFor={`${idPrefix}Passphrase`}>
             <PasswordInput
               id={`${idPrefix}Passphrase`}
               value={passphrase}
@@ -379,122 +377,127 @@ export function ConnectionDialog() {
           </DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="grid gap-4">
-          <FormField label="Name" htmlFor="name" error={errors.name ?? ""}>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => markTouched("name")}
-              placeholder="My Server"
-            />
-          </FormField>
-          <FormField label="Host" htmlFor="host" error={errors.host ?? ""}>
-            <Input
-              id="host"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              onBlur={() => markTouched("host")}
-              placeholder="example.com"
-            />
-          </FormField>
-          <FormField label="Port" htmlFor="port" error={errors.port ?? ""}>
-            <Input
-              id="port"
-              value={port}
-              onChange={(e) => setPort(e.target.value)}
-              onBlur={() => markTouched("port")}
-            />
-          </FormField>
-          <FormField label="Username" htmlFor="username" error={errors.username ?? ""}>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onBlur={() => markTouched("username")}
-            />
-          </FormField>
-          <AuthMethodFields
-            authMethod={authMethod}
-            onAuthMethodChange={setAuthMethod}
-            password={password}
-            onPasswordChange={(e) => setPassword(e.target.value)}
-            keyPath={keyPath}
-            onKeyPathChange={(e) => setKeyPath(e.target.value)}
-            passphrase={passphrase}
-            onPassphraseChange={(e) => setPassphrase(e.target.value)}
-            idPrefix=""
-          />
-          <FormField label="Startup" htmlFor="startupCommand">
-            <Input
-              id="startupCommand"
-              value={startupCommand}
-              onChange={(e) => setStartupCommand(e.target.value)}
-              placeholder="e.g. cd /app && ls"
-            />
-          </FormField>
-          {/* Jump Host Section */}
-          <button
-            type="button"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setShowJumpHost((p) => !p)}
-          >
-            {showJumpHost ? (
-              <ChevronDown className="size-3" />
-            ) : (
-              <ChevronRight className="size-3" />
-            )}
-            Jump Host
-          </button>
-          {showJumpHost && (
-            <>
-              <FormField label="Host" htmlFor="jumpHost" labelClassName="pt-2 text-right text-xs">
-                <Input
-                  id="jumpHost"
-                  value={jumpHost}
-                  onChange={(e) => setJumpHost(e.target.value)}
-                  placeholder="jump.example.com"
-                />
-              </FormField>
-              <FormField label="Port" htmlFor="jumpPort" labelClassName="pt-2 text-right text-xs">
-                <Input
-                  id="jumpPort"
-                  value={jumpPort}
-                  onChange={(e) => setJumpPort(e.target.value)}
-                />
-              </FormField>
-              <FormField label="Username" htmlFor="jumpUsername" labelClassName="pt-2 text-right text-xs">
-                <Input
-                  id="jumpUsername"
-                  value={jumpUsername}
-                  onChange={(e) => setJumpUsername(e.target.value)}
-                />
-              </FormField>
-              <AuthMethodFields
-                authMethod={jumpAuthMethod}
-                onAuthMethodChange={setJumpAuthMethod}
-                password={jumpPassword}
-                onPasswordChange={(e) => setJumpPassword(e.target.value)}
-                keyPath={jumpKeyPath}
-                onKeyPathChange={(e) => setJumpKeyPath(e.target.value)}
-                passphrase={jumpPassphrase}
-                onPassphraseChange={(e) => setJumpPassphrase(e.target.value)}
-                idPrefix="jump"
-                labelClassName="pt-2 text-right text-xs"
+          <div className="space-y-4">
+            <FormField label="Name" htmlFor="name" error={errors.name ?? ""}>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => markTouched("name")}
+                placeholder="My Server"
               />
-            </>
-          )}
-
-          {(error || testError) && (
-            <InlineAlert variant="error" message={error || testError} />
-          )}
-          {testStatus === "success" && (
-            <InlineAlert
-              variant="success"
-              message="Connection successful"
-              icon={<CheckCircle2 className="size-4" />}
+            </FormField>
+            {/* Host + Port on same row */}
+            <div className="grid grid-cols-[1fr_6rem] gap-3">
+              <FormField label="Host" htmlFor="host" error={errors.host ?? ""}>
+                <Input
+                  id="host"
+                  value={host}
+                  onChange={(e) => setHost(e.target.value)}
+                  onBlur={() => markTouched("host")}
+                  placeholder="example.com"
+                />
+              </FormField>
+              <FormField label="Port" htmlFor="port" error={errors.port ?? ""}>
+                <Input
+                  id="port"
+                  value={port}
+                  onChange={(e) => setPort(e.target.value)}
+                  onBlur={() => markTouched("port")}
+                />
+              </FormField>
+            </div>
+            <FormField label="Username" htmlFor="username" error={errors.username ?? ""}>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onBlur={() => markTouched("username")}
+              />
+            </FormField>
+            <AuthMethodFields
+              authMethod={authMethod}
+              onAuthMethodChange={setAuthMethod}
+              password={password}
+              onPasswordChange={(e) => setPassword(e.target.value)}
+              keyPath={keyPath}
+              onKeyPathChange={(e) => setKeyPath(e.target.value)}
+              passphrase={passphrase}
+              onPassphraseChange={(e) => setPassphrase(e.target.value)}
+              idPrefix=""
             />
-          )}
+            <FormField label="Startup Command" htmlFor="startupCommand">
+              <Input
+                id="startupCommand"
+                value={startupCommand}
+                onChange={(e) => setStartupCommand(e.target.value)}
+                placeholder="e.g. cd /app && ls"
+              />
+            </FormField>
+
+            {/* Jump Host Section */}
+            <button
+              type="button"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowJumpHost((p) => !p)}
+            >
+              {showJumpHost ? (
+                <ChevronDown className="size-3.5" />
+              ) : (
+                <ChevronRight className="size-3.5" />
+              )}
+              Jump Host
+            </button>
+            {showJumpHost && (
+              <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
+                <div className="grid grid-cols-[1fr_6rem] gap-3">
+                  <FormField label="Host" htmlFor="jumpHost">
+                    <Input
+                      id="jumpHost"
+                      value={jumpHost}
+                      onChange={(e) => setJumpHost(e.target.value)}
+                      placeholder="jump.example.com"
+                    />
+                  </FormField>
+                  <FormField label="Port" htmlFor="jumpPort">
+                    <Input
+                      id="jumpPort"
+                      value={jumpPort}
+                      onChange={(e) => setJumpPort(e.target.value)}
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Username" htmlFor="jumpUsername">
+                  <Input
+                    id="jumpUsername"
+                    value={jumpUsername}
+                    onChange={(e) => setJumpUsername(e.target.value)}
+                  />
+                </FormField>
+                <AuthMethodFields
+                  authMethod={jumpAuthMethod}
+                  onAuthMethodChange={setJumpAuthMethod}
+                  password={jumpPassword}
+                  onPasswordChange={(e) => setJumpPassword(e.target.value)}
+                  keyPath={jumpKeyPath}
+                  onKeyPathChange={(e) => setJumpKeyPath(e.target.value)}
+                  passphrase={jumpPassphrase}
+                  onPassphraseChange={(e) => setJumpPassphrase(e.target.value)}
+                  idPrefix="jump"
+                />
+              </div>
+            )}
+
+            {(error || testError) && (
+              <InlineAlert variant="error" message={error || testError} />
+            )}
+            {testStatus === "success" && (
+              <InlineAlert
+                variant="success"
+                message="Connection successful"
+                icon={<CheckCircle2 className="size-4" />}
+              />
+            )}
           </div>
         </div>
         <div className="flex shrink-0 justify-end gap-2 border-t border-border pt-4">

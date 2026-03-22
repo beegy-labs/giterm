@@ -17,30 +17,32 @@ export function MobileSessionTabBar({
   return (
     <DevFrame
       name="SessionTabBar"
-      className="shrink-0 flex items-center border-b border-border bg-card pt-safe-bar"
+      className="shrink-0 flex items-center border-b border-border bg-card/80 pt-safe-bar"
     >
+      {/* Connections list button */}
       <button
-        className="flex shrink-0 items-center justify-center px-2.5 py-2 text-muted-foreground active:text-foreground"
+        className="flex shrink-0 items-center justify-center px-3 py-2.5 text-muted-foreground transition-colors active:text-foreground"
         onClick={onShowConnections}
       >
         <List className="size-4" />
       </button>
 
-      <div className="flex flex-1 items-center gap-0.5 overflow-x-auto py-1 [touch-action:pan-x]">
+      {/* Session tabs */}
+      <div className="flex flex-1 items-center gap-1 overflow-x-auto px-1 py-1.5 [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {sessions.map((s, i) => (
           <button
             key={`${s.connectionId}-${i}`}
-            className={`flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-1 text-xs ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               i === activeIndex
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground active:text-foreground"
+                ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
             onClick={() => setActiveIndex(i)}
           >
             <StatusDot status={s.status} />
-            <span className="max-w-20 truncate">{s.connectionName}</span>
+            <span className="max-w-[5rem] truncate">{s.connectionName}</span>
             <button
-              className="flex size-3.5 items-center justify-center rounded-sm text-muted-foreground active:bg-accent"
+              className="flex size-3.5 shrink-0 items-center justify-center rounded-sm opacity-60 hover:opacity-100 active:bg-accent"
               onClick={(e) => {
                 e.stopPropagation();
                 closeSession(s.sessionId);
@@ -52,9 +54,10 @@ export function MobileSessionTabBar({
         ))}
       </div>
 
+      {/* New session button */}
       {sessions.length < MAX_SESSIONS && (
         <button
-          className="flex shrink-0 items-center justify-center px-2.5 py-2 text-muted-foreground active:text-foreground"
+          className="flex shrink-0 items-center justify-center px-3 py-2.5 text-muted-foreground transition-colors active:text-foreground"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="size-4" />

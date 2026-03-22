@@ -36,9 +36,9 @@ export function Sidebar() {
   const sessions = useSessionStore((s) => s.sessions);
   const canAddMore = sessions.length < MAX_SESSIONS;
   const setActiveBySessionId = useSessionStore((s) => s.setActiveBySessionId);
+
   const handleConnect = useCallback(
     async (connection: ConnectionConfig) => {
-      // If there's already an active session for this connection, switch to it
       const existing = selectSessionByConnectionId(connection.id)(
         useSessionStore.getState(),
       );
@@ -46,9 +46,7 @@ export function Sidebar() {
         setActiveBySessionId(existing.sessionId);
         return;
       }
-
       if (!canAddMore) return;
-
       await startSession(connection, connection.name);
     },
     [canAddMore, setActiveBySessionId],
@@ -62,9 +60,17 @@ export function Sidebar() {
   });
 
   return (
-    <div className="flex h-full w-56 flex-col border-r border-border bg-card">
+    <div className="flex h-full w-56 flex-col border-r border-border bg-sidebar">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-3">
-        <h2 className="text-sm font-semibold">Connections</h2>
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">Connections</h2>
+          {connections.length > 0 && (
+            <p className="text-[10px] text-muted-foreground">
+              {connections.length} saved
+            </p>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -73,45 +79,54 @@ export function Sidebar() {
           <Plus className="size-4" />
         </Button>
       </div>
+
+      {/* Connection list */}
       <ScrollArea className="flex-1">
         <div className="p-2">
           {connections.length === 0 ? (
             <EmptyState
-              icon={<Terminal className="size-10 text-primary/30" />}
+              icon={<Terminal className="size-9 text-primary/30" />}
               message="No saved connections"
               className="py-8"
             />
           ) : (
-            connections.map((conn) => {
-              const count = countByConnection.get(conn.id) ?? 0;
-              return (
-                <ConnectionItem
-                  key={conn.id}
-                  connection={conn}
-                  isActive={activeSession?.connectionId === conn.id}
-                  activeCount={count}
-                  onConnect={() => handleConnect(conn)}
-                  onEdit={() => openEdit(conn)}
-                  onRemove={() => removeConnection(conn.id)}
-                  onDuplicate={() => duplicateConnection(conn.id)}
-                />
-              );
-            })
+            <div className="flex flex-col gap-0.5">
+              {connections.map((conn) => {
+                const count = countByConnection.get(conn.id) ?? 0;
+                return (
+                  <ConnectionItem
+                    key={conn.id}
+                    connection={conn}
+                    isActive={activeSession?.connectionId === conn.id}
+                    activeCount={count}
+                    onConnect={() => handleConnect(conn)}
+                    onEdit={() => openEdit(conn)}
+                    onRemove={() => removeConnection(conn.id)}
+                    onDuplicate={() => duplicateConnection(conn.id)}
+                  />
+                );
+              })}
+            </div>
           )}
         </div>
       </ScrollArea>
+
+      {/* Server stats */}
       <ServerDashboard stats={stats} />
-      <div className="border-t border-border px-3 py-2">
+
+      {/* Bottom actions */}
+      <div className="border-t border-border px-2 py-2">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-xs"
+          className="w-full justify-start gap-2 text-xs text-muted-foreground"
           onClick={() => setTunnelDialogOpen(true)}
         >
           <ArrowRightLeft className="size-3.5" />
           Tunnels
         </Button>
       </div>
+
       <TunnelDialog
         open={tunnelDialogOpen}
         onOpenChange={setTunnelDialogOpen}
