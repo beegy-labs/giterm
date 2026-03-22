@@ -1,6 +1,7 @@
 export {
   useSessionStore,
   selectActiveSession,
+  selectSessionByConnectionId,
   MAX_SESSIONS,
   type TerminalSession,
   type SessionStatus,

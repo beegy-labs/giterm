@@ -1,6 +1,6 @@
 # giterm — App SSOT
 
-> SSH terminal client | **Last Updated**: 2026-03-12
+> SSH terminal client | **Last Updated**: 2026-03-22
 
 ## Tech Stack
 
@@ -150,3 +150,6 @@ Tauri overwrites `CFBundleVersion` on every build — fixed by the Xcode post-bu
 - **Credentials**: Passwords stored in tauriStorage JSON (reliable across restarts). OS keychain via Rust `keyring` crate as fallback (`loadSecrets()`). `SECRET_FIELDS` (FE) ↔ `ALLOWED_FIELDS` (BE) must stay in sync.
 - **App exit cleanup**: `RunEvent::Exit` handler calls `SshSessionManager::disconnect_all()` + `TunnelManager::stop_all()` + debug log `cleanup()`.
 - **ErrorBoundary**: Class component wrapping app root (React 19 requirement).
+- **iOS dev mode — WKWebView origin**: WKWebView loads via `tauri://localhost` (NOT `http://127.0.0.1:1420`). Tauri scheme handler proxies `tauri://localhost/*` → devUrl via reqwest. `fetch('/src/main.tsx')` returns HTTP 200 (proxy works), BUT `<script type="module" src="/src/main.tsx">` does NOT execute → React never mounts → white screen. **Root cause unresolved** as of 2026-03-22. Investigation: inline scripts run, inline module scripts run, only external module src fails.
+- **iOS dev mode — devUrl must be `127.0.0.1`**: `devUrl: "http://localhost:1420"` causes reqwest to resolve `localhost` → `127.0.0.1` (IPv4) while Vite binds to `::1` (IPv6, `host: false`) → ECONNREFUSED. Fix: `devUrl: "http://127.0.0.1:1420"` + `vite.config.ts host: "0.0.0.0"` (current state).
+- **iOS dev mode — Vite host**: Must be `"0.0.0.0"` (IPv4 wildcard) not `false` (IPv6 only). Set via `TAURI_DEV_HOST` env or vite.config.ts fallback.

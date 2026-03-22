@@ -40,6 +40,15 @@ function computeActiveSession(
 export const selectActiveSession = (s: SessionState): TerminalSession | null =>
   computeActiveSession(s.sessions, s.activeIndex);
 
+export const selectSessionByConnectionId =
+  (connectionId: string) =>
+  (s: SessionState): TerminalSession | undefined =>
+    s.sessions.find(
+      (session) =>
+        session.connectionId === connectionId &&
+        session.status !== "disconnected",
+    );
+
 export const useSessionStore = create<SessionState>()((set, get) => ({
   sessions: [],
   activeIndex: 0,
