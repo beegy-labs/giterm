@@ -551,7 +551,7 @@ export function ConnectionDialog() {
             </div>
           )}
           {testStatus === "success" && (
-            <div className="flex items-center gap-2 rounded-sm bg-green-500/10 p-3 text-sm text-green-600">
+            <div className="flex items-center gap-2 rounded-sm bg-primary/10 p-3 text-sm text-primary">
               <CheckCircle2 className="size-4" />
               Connection successful
             </div>

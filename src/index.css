@@ -38,60 +38,66 @@
 }
 
 /*
- * Midnight Gentle Study Theme
- * WCAG 2.1 AAA Compliant | 8pt Grid | Warm Brown Tones
- * Always dark — terminal-first app
+ * Signal Dark Theme
+ * Veronex-inspired: deep green-black + emerald accent
+ * WCAG 2.1 AAA Compliant | 8pt Grid | Terminal-first
+ * Always dark — terminal app
+ *
+ * Contrast (WCAG AAA ≥ 7:1):
+ *   --foreground  #DCE8DF on #0B0E0C → 14.2:1 ✓
+ *   --primary     #10B981 on #0B0E0C →  7.7:1 ✓
+ *   --muted-fg    #88A896 on #0B0E0C →  7.4:1 ✓
  */
 :root {
     --radius: 0.25rem;
 
-    /* Background — Deep Brown Charcoal */
-    --background: #1E1C1A;
-    --foreground: #CCC5BD;
+    /* Background — Obsidian Deep (green-tinted near-black) */
+    --background: #0B0E0C;
+    --foreground: #DCE8DF;
 
-    /* Card — Surface */
-    --card: #282522;
-    --card-foreground: #CCC5BD;
+    /* Card — Dark Graphite */
+    --card: #111512;
+    --card-foreground: #DCE8DF;
 
-    /* Popover — Surface Container */
-    --popover: #322F2B;
-    --popover-foreground: #CCC5BD;
+    /* Popover — Elevated Surface */
+    --popover: #182018;
+    --popover-foreground: #DCE8DF;
 
-    /* Primary — Warm Golden Bronze */
-    --primary: #D0B080;
-    --primary-foreground: #1E1C1A;
+    /* Primary — Bio-Emerald */
+    --primary: #10B981;
+    --primary-foreground: #030A05;
 
     /* Secondary — Surface Container */
-    --secondary: #322F2B;
-    --secondary-foreground: #CCC5BD;
+    --secondary: #182018;
+    --secondary-foreground: #DCE8DF;
 
     /* Muted — Surface Container */
-    --muted: #322F2B;
-    --muted-foreground: #9A9590;
+    --muted: #182018;
+    --muted-foreground: #88A896;
 
-    /* Accent — Surface Container High */
-    --accent: #3C3835;
-    --accent-foreground: #CCC5BD;
+    /* Accent — Hover / Active State */
+    --accent: #1C2B22;
+    --accent-foreground: #DCE8DF;
 
-    /* Destructive — Error Red */
-    --destructive: #D9534F;
+    /* Destructive — Rose */
+    --destructive: #FB7185;
 
     /* Border & Input */
-    --border: #3C3835;
-    --input: #3C3835;
+    --border: #222E28;
+    --input: #222E28;
 
-    /* Ring — Primary accent for focus */
-    --ring: #D0B080;
+    /* Ring — Focus indicator */
+    --ring: #10B981;
 
-    /* Sidebar */
-    --sidebar: #282522;
-    --sidebar-foreground: #CCC5BD;
-    --sidebar-primary: #D0B080;
-    --sidebar-primary-foreground: #1E1C1A;
-    --sidebar-accent: #3C3835;
-    --sidebar-accent-foreground: #CCC5BD;
-    --sidebar-border: #3C3835;
-    --sidebar-ring: #D0B080;
+    /* Sidebar — Slightly darker than background */
+    --sidebar: #0E1210;
+    --sidebar-foreground: #DCE8DF;
+    --sidebar-primary: #10B981;
+    --sidebar-primary-foreground: #030A05;
+    --sidebar-accent: #1C2B22;
+    --sidebar-accent-foreground: #DCE8DF;
+    --sidebar-border: #1C2B22;
+    --sidebar-ring: #10B981;
 }
 
 @layer base {
@@ -103,7 +109,7 @@
         /* Prevent white flash on iOS: native safe area injection may arrive slightly
          * after first paint. Set dark background on html/body so any brief period
          * before #root renders is invisible. */
-        background-color: #1E1C1A;
+        background-color: #0B0E0C;
         /* NOTE: overflow:hidden intentionally removed.
          * When overflow:hidden is set on html/body, window.scrollTo(0,0) becomes
          * a no-op — the browser doesn't translate it to UIScrollView.setContentOffset:(0,0).

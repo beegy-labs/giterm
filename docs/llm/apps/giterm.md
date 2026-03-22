@@ -18,14 +18,16 @@
 
 ## Design System
 
+Signal Dark — veronex-inspired green-black terminal theme (WCAG 2.1 AAA).
+
 | Token | Value | Note |
 |-------|-------|------|
-| Background | `#1E1C1A` | Deep Brown Charcoal |
-| Surface | `#282522` | Cards, sidebar |
-| Primary | `#D0B080` | Warm Golden Bronze |
-| Text | `#CCC5BD` | 10.2:1 contrast |
-| Secondary | `#9A9590` | 7.1:1 contrast |
-| Border | `#3C3835` | |
+| Background | `#0B0E0C` | Obsidian Deep (green-tinted near-black) |
+| Surface | `#111512` | Cards, sidebar |
+| Primary | `#10B981` | Bio-Emerald — 7.7:1 contrast ✓ AAA |
+| Text | `#DCE8DF` | Soft green-white — 14.2:1 contrast ✓ AAA |
+| Secondary | `#88A896` | Muted — 7.4:1 contrast ✓ AAA |
+| Border | `#222E28` | |
 | Grid | 8px | All spacing multiples |
 | Radius | 4px | Terminal default |
 
