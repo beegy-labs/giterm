@@ -5,6 +5,8 @@ import {
   XCircle,
   ChevronDown,
   ChevronRight,
+  Terminal,
+  FlaskConical,
 } from "lucide-react";
 import {
   Dialog,
@@ -16,6 +18,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { FormField } from "@/shared/ui/form-field";
 import { InlineAlert } from "@/shared/ui/inline-alert";
+import { SectionHeader } from "@/shared/ui/section-header";
 import {
   Select,
   SelectContent,
@@ -78,6 +81,7 @@ function AuthMethodFields({
             id={`${idPrefix}Password`}
             value={password}
             onChange={onPasswordChange}
+            className="font-mono"
           />
         </FormField>
       ) : (
@@ -88,6 +92,7 @@ function AuthMethodFields({
               value={keyPath}
               onChange={onKeyPathChange}
               placeholder="~/.ssh/id_ed25519"
+              className="font-mono text-sm"
             />
           </FormField>
           <FormField label="Passphrase" htmlFor={`${idPrefix}Passphrase`}>
@@ -95,7 +100,8 @@ function AuthMethodFields({
               id={`${idPrefix}Passphrase`}
               value={passphrase}
               onChange={onPassphraseChange}
-              placeholder="Optional"
+              placeholder="optional"
+              className="font-mono"
             />
           </FormField>
         </>
@@ -370,124 +376,158 @@ export function ConnectionDialog() {
         if (!v) resetForm();
       }}
     >
-      <DialogContent className="flex max-h-[85%] flex-col sm:max-w-md">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>
+      <DialogContent className="flex max-h-[88%] flex-col sm:max-w-md">
+        {/* Header */}
+        <DialogHeader className="shrink-0 border-b border-border pb-3">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
+              <Terminal className="size-4 text-primary" />
+            </div>
             {isEditing ? "Edit Connection" : "New Connection"}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Scrollable form */}
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-4 [touch-action:pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="space-y-4">
-            <FormField label="Name" htmlFor="name" error={errors.name ?? ""}>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => markTouched("name")}
-                placeholder="My Server"
-              />
-            </FormField>
-            {/* Host + Port on same row */}
-            <div className="grid grid-cols-[1fr_6rem] gap-3">
-              <FormField label="Host" htmlFor="host" error={errors.host ?? ""}>
+          <div className="space-y-5">
+
+            {/* ── CONNECTION ── */}
+            <SectionHeader title="Connection" />
+            <div className="space-y-3">
+              <FormField label="Name" htmlFor="name" error={errors.name ?? ""}>
                 <Input
-                  id="host"
-                  value={host}
-                  onChange={(e) => setHost(e.target.value)}
-                  onBlur={() => markTouched("host")}
-                  placeholder="example.com"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => markTouched("name")}
+                  placeholder="production-api"
                 />
               </FormField>
-              <FormField label="Port" htmlFor="port" error={errors.port ?? ""}>
+              <div className="grid grid-cols-[1fr_5.5rem] gap-2.5">
+                <FormField label="Host" htmlFor="host" error={errors.host ?? ""}>
+                  <Input
+                    id="host"
+                    value={host}
+                    onChange={(e) => setHost(e.target.value)}
+                    onBlur={() => markTouched("host")}
+                    placeholder="example.com"
+                    className="font-mono"
+                  />
+                </FormField>
+                <FormField label="Port" htmlFor="port" error={errors.port ?? ""}>
+                  <Input
+                    id="port"
+                    value={port}
+                    onChange={(e) => setPort(e.target.value)}
+                    onBlur={() => markTouched("port")}
+                    className="font-mono text-center"
+                  />
+                </FormField>
+              </div>
+              <FormField label="Username" htmlFor="username" error={errors.username ?? ""}>
                 <Input
-                  id="port"
-                  value={port}
-                  onChange={(e) => setPort(e.target.value)}
-                  onBlur={() => markTouched("port")}
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onBlur={() => markTouched("username")}
+                  className="font-mono"
                 />
               </FormField>
             </div>
-            <FormField label="Username" htmlFor="username" error={errors.username ?? ""}>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onBlur={() => markTouched("username")}
-              />
-            </FormField>
-            <AuthMethodFields
-              authMethod={authMethod}
-              onAuthMethodChange={setAuthMethod}
-              password={password}
-              onPasswordChange={(e) => setPassword(e.target.value)}
-              keyPath={keyPath}
-              onKeyPathChange={(e) => setKeyPath(e.target.value)}
-              passphrase={passphrase}
-              onPassphraseChange={(e) => setPassphrase(e.target.value)}
-              idPrefix=""
-            />
-            <FormField label="Startup Command" htmlFor="startupCommand">
-              <Input
-                id="startupCommand"
-                value={startupCommand}
-                onChange={(e) => setStartupCommand(e.target.value)}
-                placeholder="e.g. cd /app && ls"
-              />
-            </FormField>
 
-            {/* Jump Host Section */}
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setShowJumpHost((p) => !p)}
-            >
-              {showJumpHost ? (
-                <ChevronDown className="size-3.5" />
-              ) : (
-                <ChevronRight className="size-3.5" />
-              )}
-              Jump Host
-            </button>
-            {showJumpHost && (
-              <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
-                <div className="grid grid-cols-[1fr_6rem] gap-3">
-                  <FormField label="Host" htmlFor="jumpHost">
-                    <Input
-                      id="jumpHost"
-                      value={jumpHost}
-                      onChange={(e) => setJumpHost(e.target.value)}
-                      placeholder="jump.example.com"
-                    />
-                  </FormField>
-                  <FormField label="Port" htmlFor="jumpPort">
-                    <Input
-                      id="jumpPort"
-                      value={jumpPort}
-                      onChange={(e) => setJumpPort(e.target.value)}
-                    />
-                  </FormField>
-                </div>
-                <FormField label="Username" htmlFor="jumpUsername">
-                  <Input
-                    id="jumpUsername"
-                    value={jumpUsername}
-                    onChange={(e) => setJumpUsername(e.target.value)}
-                  />
-                </FormField>
-                <AuthMethodFields
-                  authMethod={jumpAuthMethod}
-                  onAuthMethodChange={setJumpAuthMethod}
-                  password={jumpPassword}
-                  onPasswordChange={(e) => setJumpPassword(e.target.value)}
-                  keyPath={jumpKeyPath}
-                  onKeyPathChange={(e) => setJumpKeyPath(e.target.value)}
-                  passphrase={jumpPassphrase}
-                  onPassphraseChange={(e) => setJumpPassphrase(e.target.value)}
-                  idPrefix="jump"
+            {/* ── AUTHENTICATION ── */}
+            <SectionHeader title="Authentication" />
+            <div className="space-y-3">
+              <AuthMethodFields
+                authMethod={authMethod}
+                onAuthMethodChange={setAuthMethod}
+                password={password}
+                onPasswordChange={(e) => setPassword(e.target.value)}
+                keyPath={keyPath}
+                onKeyPathChange={(e) => setKeyPath(e.target.value)}
+                passphrase={passphrase}
+                onPassphraseChange={(e) => setPassphrase(e.target.value)}
+                idPrefix=""
+              />
+            </div>
+
+            {/* ── ADVANCED ── */}
+            <SectionHeader title="Advanced" />
+            <div className="space-y-3">
+              <FormField label="Startup Command" htmlFor="startupCommand">
+                <Input
+                  id="startupCommand"
+                  value={startupCommand}
+                  onChange={(e) => setStartupCommand(e.target.value)}
+                  placeholder="tmux new -As main"
+                  className="font-mono text-sm"
                 />
-              </div>
-            )}
+              </FormField>
 
+              {/* Jump Host toggle */}
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => setShowJumpHost((p) => !p)}
+              >
+                {showJumpHost ? (
+                  <ChevronDown className="size-3" />
+                ) : (
+                  <ChevronRight className="size-3" />
+                )}
+                <span>jump_host</span>
+                {showJumpHost && (
+                  <span className="ml-1 rounded bg-primary/10 px-1 py-px text-[10px] text-primary">
+                    enabled
+                  </span>
+                )}
+              </button>
+
+              {showJumpHost && (
+                <div className="space-y-3 rounded-lg border border-border bg-muted/30 px-3 py-3">
+                  <div className="grid grid-cols-[1fr_5.5rem] gap-2.5">
+                    <FormField label="Host" htmlFor="jumpHost">
+                      <Input
+                        id="jumpHost"
+                        value={jumpHost}
+                        onChange={(e) => setJumpHost(e.target.value)}
+                        placeholder="bastion.example.com"
+                        className="font-mono"
+                      />
+                    </FormField>
+                    <FormField label="Port" htmlFor="jumpPort">
+                      <Input
+                        id="jumpPort"
+                        value={jumpPort}
+                        onChange={(e) => setJumpPort(e.target.value)}
+                        className="font-mono text-center"
+                      />
+                    </FormField>
+                  </div>
+                  <FormField label="Username" htmlFor="jumpUsername">
+                    <Input
+                      id="jumpUsername"
+                      value={jumpUsername}
+                      onChange={(e) => setJumpUsername(e.target.value)}
+                      className="font-mono"
+                    />
+                  </FormField>
+                  <AuthMethodFields
+                    authMethod={jumpAuthMethod}
+                    onAuthMethodChange={setJumpAuthMethod}
+                    password={jumpPassword}
+                    onPasswordChange={(e) => setJumpPassword(e.target.value)}
+                    keyPath={jumpKeyPath}
+                    onKeyPathChange={(e) => setJumpKeyPath(e.target.value)}
+                    passphrase={jumpPassphrase}
+                    onPassphraseChange={(e) => setJumpPassphrase(e.target.value)}
+                    idPrefix="jump"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Alerts */}
             {(error || testError) && (
               <InlineAlert variant="error" message={error || testError} />
             )}
@@ -500,46 +540,61 @@ export function ConnectionDialog() {
             )}
           </div>
         </div>
-        <div className="flex shrink-0 justify-end gap-2 border-t border-border pt-4">
+
+        {/* Footer */}
+        <div className="flex shrink-0 items-center justify-between border-t border-border pt-3">
+          {/* Test button — left side */}
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={handleTest}
             disabled={testStatus === "testing" || !host || !username}
+            className={`gap-1.5 font-mono text-xs ${
+              testStatus === "success"
+                ? "text-primary"
+                : testStatus === "failed"
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+            }`}
           >
             {testStatus === "testing" ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Testing...
-              </>
+              <Loader2 className="size-3.5 animate-spin" />
             ) : testStatus === "success" ? (
-              <>
-                <CheckCircle2 className="size-4" />
-                Test
-              </>
+              <CheckCircle2 className="size-3.5" />
             ) : testStatus === "failed" ? (
-              <>
-                <XCircle className="size-4" />
-                Test
-              </>
+              <XCircle className="size-3.5" />
             ) : (
-              "Test"
+              <FlaskConical className="size-3.5" />
             )}
+            {testStatus === "testing" ? "testing..." : "test_conn"}
           </Button>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          {isEditing ? (
-            <Button onClick={handleSave} disabled={!isValid}>
-              Save
+
+          {/* Cancel + Save/Connect — right side */}
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              Cancel
             </Button>
-          ) : (
-            <Button
-              onClick={handleConnect}
-              disabled={connecting || !isValid}
-            >
-              {connecting ? "Connecting..." : "Connect"}
-            </Button>
-          )}
+            {isEditing ? (
+              <Button size="sm" onClick={handleSave} disabled={!isValid}>
+                Save
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleConnect}
+                disabled={connecting || !isValid}
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Connecting…
+                  </>
+                ) : (
+                  "Connect"
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

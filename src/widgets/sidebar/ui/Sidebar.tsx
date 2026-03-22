@@ -3,6 +3,7 @@ import { Plus, Terminal, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import {
   useConnectionStore,
   ConnectionItem,
@@ -71,13 +72,16 @@ export function Sidebar() {
             </p>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => setDialogOpen(true)}
-        >
-          <Plus className="size-4" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Connection list */}

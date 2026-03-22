@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { MobileScreen } from "@/shared/ui/mobile-screen";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import {
   useConnectDialogStore,
   startSession,
@@ -39,14 +40,16 @@ export function MobileConnectionList({ onBack }: { onBack?: () => void }) {
             )}
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setDialogOpen(true)}
-          className="shrink-0"
-        >
-          <Plus className="size-5" />
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Plus className="size-5" />
+          </Button>
+        </div>
       </MobileScreen.Header>
 
       <ScrollArea className="flex-1 [touch-action:pan-y]">

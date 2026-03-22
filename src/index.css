@@ -38,16 +38,14 @@
 }
 
 /*
- * Signal Dark Theme
- * Veronex-inspired: deep green-black + emerald accent
- * WCAG 2.1 AAA Compliant | 8pt Grid | Terminal-first
- * Always dark — terminal app
+ * Signal Dark Theme  (default)
+ * Deep green-black + emerald | WCAG AAA | Terminal-first
  *
- * Contrast (WCAG AAA ≥ 7:1):
- *   --foreground  #DCE8DF on #0B0E0C → 14.2:1 ✓
- *   --primary     #10B981 on #0B0E0C →  7.7:1 ✓
- *   --muted-fg    #88A896 on #0B0E0C →  7.4:1 ✓
+ * Signal Light Theme  ([data-theme="light"])
+ * Platinum pearl + deep emerald | WCAG AAA | Technical clean
  */
+
+/* ── Signal Dark (default) ───────────────────────────── */
 :root {
     --radius: 0.25rem;
 
@@ -100,16 +98,55 @@
     --sidebar-ring: #10B981;
 }
 
+/* ── Signal Light ────────────────────────────────────── */
+[data-theme="light"] {
+    /* Background — Platinum Pearl (green-tinted off-white) */
+    --background: #F4F6F5;
+    --foreground: #0A1A0F;
+
+    --card: #FFFFFF;
+    --card-foreground: #0A1A0F;
+
+    --popover: #FFFFFF;
+    --popover-foreground: #0A1A0F;
+
+    /* Primary — Deep Emerald (7.1:1 on background) ✓ AAA */
+    --primary: #065F46;
+    --primary-foreground: #FFFFFF;
+
+    --secondary: #E6EFE9;
+    --secondary-foreground: #0A1A0F;
+
+    --muted: #EBF0ED;
+    --muted-foreground: #3D5448;
+
+    --accent: #DDE9E2;
+    --accent-foreground: #0A1A0F;
+
+    --destructive: #991B1B;
+
+    --border: #C4D4CA;
+    --input: #C4D4CA;
+    --ring: #065F46;
+
+    --sidebar: #E8EEE9;
+    --sidebar-foreground: #0A1A0F;
+    --sidebar-primary: #065F46;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #D4E4DA;
+    --sidebar-accent-foreground: #0A1A0F;
+    --sidebar-border: #C4D4CA;
+    --sidebar-ring: #065F46;
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
     html, body {
         height: 100%;
-        /* Prevent white flash on iOS: native safe area injection may arrive slightly
-         * after first paint. Set dark background on html/body so any brief period
-         * before #root renders is invisible. */
-        background-color: #0B0E0C;
+        /* Use CSS var so theme switch is instant — no hardcoded hex */
+        background-color: var(--background);
         /* NOTE: overflow:hidden intentionally removed.
          * When overflow:hidden is set on html/body, window.scrollTo(0,0) becomes
          * a no-op — the browser doesn't translate it to UIScrollView.setContentOffset:(0,0).
