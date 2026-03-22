@@ -29,3 +29,4 @@ Remote Server
 | CDD | `docs/llm/policies/cdd.md` |
 | SDD | `docs/llm/policies/sdd.md` |
 | ADD | `docs/llm/policies/add.md` |
+| TDD | `docs/llm/policies/tdd.md` |

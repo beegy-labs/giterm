@@ -42,6 +42,14 @@
 | SSH | russh 0.57 async, tokio runtime |
 | Data flow | Tauri events for server→client, commands for client→server |
 
+## Testing
+
+| Rule | Detail |
+|------|--------|
+| Co-located | `*.test.ts` / `*.test.tsx` next to source |
+| Unit only | Pure functions (parsers, processors, validators) — no IPC, no xterm |
+| Full policy | `docs/llm/policies/tdd.md` |
+
 ## Dev & Commits
 
 | Rule | Detail |
