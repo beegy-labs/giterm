@@ -14,7 +14,7 @@
 | Biz logic in model | State/hooks in `model/`, not in UI components |
 | Selectors | Derived state via exported selectors (e.g. `selectActiveSession`), not store getters. Every module exports via `index.ts` |
 
-## Design System (Midnight Gentle Study)
+## Design System (Signal Dark)
 
 | Rule | Detail |
 |------|--------|

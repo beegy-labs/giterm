@@ -65,7 +65,7 @@ UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`
 | `userId` | `localStorage["giterm:user-id"]` | `crypto.randomUUID()` on first launch |
 | `adsEnabled` | `localStorage["giterm:ads-enabled"]` | `true` |
 | `lastShownAt` | `localStorage["giterm:ad-last-shown"]` | `0` |
-| `bannerVisible` | memory only | `false` |
+| `isBannerVisible` | memory only | `false` |
 
 ## CSS Integration
 
@@ -85,6 +85,15 @@ UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`
 - `SKAdNetworkItems`: `cstr6suwn9.skadnetwork` entry required for attribution
 - `Podfile`: `pod 'Google-Mobile-Ads-SDK'` in `giterm_iOS` target
 - Current IDs: test IDs — replace before production release
+
+## Public API (`index.ts`)
+
+| Export | Source | Purpose |
+|--------|--------|---------|
+| `AdBanner` | `ui/AdBanner.tsx` | Mount point — renders `null`, mounts `useAdBanner()` |
+| `AdToggle` | `ui/AdBanner.tsx` | Inline ads on/off indicator button |
+| `AdDevPanel` | `ui/AdDevPanel.tsx` | DEV-only testing panel |
+| `useAdBannerStore` | `model/adBannerStore.ts` | Store accessor (userId, adsEnabled, isBannerVisible, methods) |
 
 ## AdDevPanel (DEV only)
 
