@@ -9,7 +9,7 @@
 | Frontend | React 19, xterm.js, shadcn/ui, Tailwind CSS v4 |
 | Backend | Rust, russh 0.57.x, keyring (OS keychain) |
 | Framework | Tauri v2, tauri-specta v2 RC |
-| Design | Midnight Gentle Study (WCAG AAA) |
+| Design | Signal Dark — green-black + emerald (WCAG AAA) |
 
 ## Key Files
 
@@ -19,7 +19,7 @@
 | `src-tauri/src/commands/` | ssh, tunnel, credential, ime_log, viewport_log |
 | `src/widgets/terminal-view/` | TerminalView, HiddenImeInput, KeyboardToolbar + model hooks |
 | `src/widgets/mobile-layout/` | MobileLayout (safe area SSOT), MobileConnectionList, MobileSessionTabBar |
-| `src/features/ad-banner/` | AdBanner slot + useAdBannerStore (AdMob integration pending) |
+| `src/features/ad-banner/` | AdMob banner — ObjC2 runtime (admob.rs), useAdBanner hook, AdToggle, AdDevPanel |
 | `src/widgets/keyboard-shortcuts/` | Keyboard shortcuts widget |
 | `src/widgets/sidebar/` | Connection list + server dashboard |
 | `src/features/ssh-connect/` | SSH API + events + reconnect + closeSession |
@@ -40,7 +40,7 @@
 | Korean IME (single-input) | ✓ |
 | OS keychain credentials | ✓ |
 | Host key verification (unknown/changed) | ✓ |
-| Ad banner slot (AdMob) | ⚠ (UI ready, SDK pending) |
+| AdMob banner (iOS native, ObjC2 runtime) | ✓ |
 | App exit cleanup (SSH+tunnels) | ✓ |
 | iOS safe area native fix (WKWebView ObjC) | ✓ |
 | iOS input zoom fix (font-size 16px) | ✓ |

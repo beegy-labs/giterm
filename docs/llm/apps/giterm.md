@@ -67,7 +67,7 @@ src-tauri/src/
 │   ├── tunnel.rs       — Port forwarding
 │   ├── known_hosts.rs  — Host key verification
 │   └── types.rs        — ConnectionConfig, AuthMethod (manual Debug redacts secrets)
-└── commands/           — ssh, tunnel, credential, ime_log, viewport_log
+└── commands/           — ssh, tunnel, credential, admob, ime_log, viewport_log
 ```
 
 ## IPC Commands
@@ -83,6 +83,10 @@ src-tauri/src/
 | `ssh_host_key_verify_respond` | FE→BE | Accept/reject host key (HostKeyVerifyDialog) |
 | `credential_store/get/delete/delete_all` | FE→BE | OS keychain CRUD |
 | `tunnel_start` / `tunnel_stop` | FE→BE | Local port forwarding |
+| `admob_init` | FE→BE | Initialize GADMobileAds SDK (iOS only, ObjC2 runtime) |
+| `admob_banner_show` | FE→BE | Create GADBannerView, add to UIWindow, load ad |
+| `admob_banner_hide` | FE→BE | `[banner removeFromSuperview]` |
+| `admob_banner_is_visible` | FE→BE | Check BANNER_PTR static pointer |
 | `ime_log_start/append/stop` | FE→BE | Dev IME file logging |
 | `vp_log_start/append/stop` | FE→BE | Dev viewport file logging |
 | `ssh-data` event | BE→FE | Stream remote output |
@@ -119,7 +123,7 @@ Server stats use TanStack Query (`features/server-monitor/model/useServerStats.t
 | Command | Purpose |
 |---------|---------|
 | `pnpm tauri dev` | Desktop dev |
-| `(echo 8; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro = index 8) |
+| `(echo 9; sleep 600) \| pnpm tauri ios dev` | iOS sim (iPhone 17 Pro Max = index 9) |
 | `lsof -ti:1420 \| xargs -r kill -9` | Kill stale Vite port |
 | `pnpm test:run` | Vitest |
 | `cargo check --manifest-path src-tauri/Cargo.toml` | Rust check |
@@ -129,15 +133,30 @@ Server stats use TanStack Query (`features/server-monitor/model/useServerStats.t
 | Item | Value |
 |------|-------|
 | Bundle ID | `com.vero.giterm` |
-| Build command | `pnpm tauri ios build --export-method app-store-connect` |
-| Build number | `YYMMDDHH.N` (UTC) via Xcode "Auto Build Number" post-build phase |
-| Signing | Apple Distribution: JAEYOUNG LEE (4VF752P8A8) |
-| Upload | Transporter app (Apple ID auth required) |
+| Deployment target | iOS 14.0 |
+| Required capabilities | arm64, metal |
+| Team ID | `4VF752P8A8` (Apple Distribution: JAEYOUNG LEE) |
+| Build command | `pnpm tauri ios build` |
+| Build number policy | `YYMMDD.N` (년월일.배포수) — e.g. `260322.1` |
+| Build number file | `.build_number` (gitignored — set locally before each release build) |
+| Signing | `CODE_SIGN_STYLE: Automatic` in `project.yml` |
+| Upload | Transporter app (drag `.ipa` from `src-tauri/gen/apple/build/arm64/`) |
 
-Tauri overwrites `CFBundleVersion` on every build — fixed by the Xcode post-build script.
+**Build number mechanism**: Tauri's xcode-script overwrites `CFBundleVersion` with
+`tauri.conf.json` version on every build. Fixed by a `postBuildScripts` entry in
+`src-tauri/gen/apple/project.yml` that patches the bundle's Info.plist with the value
+from `.build_number` — runs after ProcessInfoPlistFile, before CodeSign.
+
+**libapp.a conflict prevention**: `src-tauri/gen/apple/project.yml` does NOT include
+`- path: Externals` in sources. `LIBRARY_SEARCH_PATHS` handles linker discovery.
+After a release build, `Externals/arm64/release/libapp.a` is created — dev builds will
+fail if this coexists with `Externals/arm64/debug/libapp.a` (duplicate copy commands).
+Clean with: `rm -rf src-tauri/gen/apple/Externals/arm64/release/`
 
 ## Known Pitfalls
 
+- **AdMob simulator**: `GADMobileAds class not found` in iOS simulator is expected — CocoaPods links correctly on device builds. The ObjC2 runtime approach (`AnyClass::get(c"GADMobileAds")`) handles this gracefully (logs warning, returns without crash).
+- **AdMob Info.plist**: `GADApplicationIdentifier` key is REQUIRED — app crashes on launch without it. Defined in `project.yml` `info.properties` so it survives `xcodegen generate`.
 - **StrictMode + Tauri `listen()`**: `subscribeSshData`/`subscribeSshDisconnect` adapter uses `cancelled` flag pattern.
 - **Korean IME**: Single-input, `value=""` reset. See `docs/llm/features/korean-ime.md`.
 - **iOS caret**: 10-layer fix. See `docs/llm/features/ios-caret-fix.md`.

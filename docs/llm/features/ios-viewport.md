@@ -54,8 +54,8 @@ env() path completely removed. All safe area via --sat/--sab only.
 
 ```css
 /* Safe area via --sat only (no env()) */
-.pt-safe-bar    { padding-top: var(--sat); }
-.pt-safe-header { padding-top: calc(var(--sat) + 0.25rem); }
+.pt-safe-bar    { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px)); }
+.pt-safe-header { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px) + 0.25rem); }
 
 /* Hide #root until native safe area ready (prevents layout flash) */
 #root:not([data-ios-safe-area-ready]) { opacity: 0; }
@@ -85,6 +85,7 @@ Adding pt-safe-bar to a flex container reduces its children's available space.
 | `--sat` | native inject → cache → 0 | e.g. 59px | Safe area top |
 | `--sab` | native inject → cache → 0 | e.g. 34px | Safe area bottom |
 | `--vvh-safe-bottom` | useLayoutEffect | --sab value | KeyboardToolbar bottom padding |
+| `--ad-banner-h` | useAdBanner() hook | `0px` / `50px` | AdMob banner height — included in `.pt-safe-bar` and `.pt-safe-header` |
 
 ## Flutter vs Tauri Comparison
 
