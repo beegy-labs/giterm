@@ -3,7 +3,8 @@ import { Terminal as XTerminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { sshResize } from "@/features/ssh-connect";
-import { terminalTheme } from "@/shared/config/designTokens";
+import { getTerminalTheme } from "@/shared/config/designTokens";
+import type { Theme } from "@/shared/lib/useTheme";
 import type { TerminalSession } from "@/entities/session";
 import type { HiddenImeInputHandle } from "../ui/HiddenImeInput";
 import type { TermInstance } from "./types";
@@ -13,12 +14,13 @@ export function useTerminalInstances(args: {
   activeSessionId: string | undefined;
   isMobile: boolean;
   fontSize: number;
+  uiTheme: Theme;
   imeInputRef: RefObject<HiddenImeInputHandle | null>;
 }): {
   containerRef: RefObject<HTMLDivElement | null>;
   instancesRef: React.MutableRefObject<Map<string, TermInstance>>;
 } {
-  const { sessions, activeSessionId, isMobile, fontSize, imeInputRef } = args;
+  const { sessions, activeSessionId, isMobile, fontSize, uiTheme, imeInputRef } = args;
   const containerRef = useRef<HTMLDivElement>(null);
   const instancesRef = useRef<Map<string, TermInstance>>(new Map());
 
@@ -68,7 +70,7 @@ export function useTerminalInstances(args: {
       container.appendChild(termEl);
 
       const term = new XTerminal({
-        theme: terminalTheme,
+        theme: getTerminalTheme(uiTheme),
         fontFamily:
           "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
         fontSize: isMobile ? 12 : fontSizeRef.current,
@@ -216,6 +218,14 @@ export function useTerminalInstances(args: {
       observer.disconnect();
     };
   }, []); // mount-only — activeSessionId accessed via ref
+
+  // Update terminal theme across all instances when UI theme switches
+  useEffect(() => {
+    const theme = getTerminalTheme(uiTheme);
+    for (const [, inst] of instancesRef.current) {
+      inst.terminal.options.theme = theme;
+    }
+  }, [uiTheme]);
 
   // Update font size across all instances when it changes
   useEffect(() => {

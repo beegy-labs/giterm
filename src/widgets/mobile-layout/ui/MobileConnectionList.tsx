@@ -1,4 +1,4 @@
-import { Plus, Terminal } from "lucide-react";
+import { Plus, Terminal, ChevronRight } from "lucide-react";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
@@ -21,6 +21,8 @@ export function MobileConnectionList({ onBack }: { onBack?: () => void }) {
   const setDialogOpen = useConnectDialogStore((s) => s.setOpen);
   const openEdit = useConnectDialogStore((s) => s.openEdit);
   const activeSession = useSessionStore(selectActiveSession);
+  const sessions = useSessionStore((s) => s.sessions);
+  const activeSessions = sessions.filter((s) => s.status !== "disconnected");
 
   return (
     <MobileScreen name="ConnectionList">
@@ -51,6 +53,30 @@ export function MobileConnectionList({ onBack }: { onBack?: () => void }) {
           </Button>
         </div>
       </MobileScreen.Header>
+
+      {/* Active session banner */}
+      {onBack && activeSessions.length > 0 && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="mx-4 mt-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-left transition-colors active:bg-primary/20"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary/20">
+              <Terminal className="size-3.5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-primary">
+                {activeSessions.length === 1
+                  ? (activeSessions[0]?.connectionName ?? "Terminal")
+                  : `${activeSessions.length} active sessions`}
+              </p>
+              <p className="text-xs text-primary/70">Tap to open terminal</p>
+            </div>
+          </div>
+          <ChevronRight className="size-4 text-primary/60" />
+        </button>
+      )}
 
       <ScrollArea className="flex-1 [touch-action:pan-y]">
         <div className="flex flex-col gap-3 p-4">

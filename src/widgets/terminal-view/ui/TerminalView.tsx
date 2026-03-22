@@ -13,6 +13,7 @@ import { useTerminalSettingsStore } from "@/entities/session";
 import { imeLogAppend, imeLogStart, imeLogStop } from "@/features/ime-log";
 import { FontSizeControls } from "./FontSizeControls";
 import { useIsMobile } from "@/shared/lib/useIsMobile";
+import { useTheme } from "@/shared/lib/useTheme";
 import { KeyboardToolbar } from "./KeyboardToolbar";
 import { HiddenImeInput, type HiddenImeInputHandle } from "./HiddenImeInput";
 import { useTerminalInstances } from "../model/useTerminalInstances";
@@ -31,6 +32,7 @@ export function TerminalView({ showToolbar = false }: TerminalViewProps) {
   const sessions = useSessionStore((s) => s.sessions);
   const isMobile = useIsMobile();
   const fontSize = useTerminalSettingsStore((s) => s.fontSize);
+  const uiTheme = useTheme();
 
   const [isCtrlActive, setIsCtrlActive] = useState(false);
   const [isAltActive, setIsAltActive] = useState(false);
@@ -45,6 +47,7 @@ export function TerminalView({ showToolbar = false }: TerminalViewProps) {
     activeSessionId,
     isMobile,
     fontSize,
+    uiTheme,
     imeInputRef,
   });
 
