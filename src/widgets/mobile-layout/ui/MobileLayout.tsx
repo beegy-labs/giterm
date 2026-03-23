@@ -59,7 +59,8 @@ export function MobileLayout({ terminalView }: MobileLayoutProps) {
         />
       </div>
       <div
-        className={showConnections ? "hidden" : "flex flex-1 flex-col overflow-hidden"}
+        className={showConnections ? "hidden" : "flex flex-col overflow-hidden"}
+        style={showConnections ? undefined : { height: "var(--vvh, 100vh)" }}
       >
         <AdBanner />
         <MobileSessionTabBar
