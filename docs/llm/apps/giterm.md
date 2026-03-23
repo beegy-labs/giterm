@@ -111,11 +111,9 @@ Server stats: TanStack Query, `staleTime: 4s`, `refetchInterval: 5s`, CPU delta 
 
 ### iOS Terminal Rendering
 
-- iPhone WKWebView DOM renderer is unreliable — may show white/faint text even when simulator looks correct.
-- Fix: mobile loads `@xterm/addon-canvas` (Canvas2D) after `term.open()`; WebGL desktop-only.
-- `term.open()` must be called while element is visible (`display:block`) so canvas initializes at correct dimensions. Call `fitAddon.fit()` immediately after, then hide via `visibility:hidden` (never `display:none` — drops canvas renderer on iOS).
-- `ensureXtermDomFallback()` patches xterm DOM subtree CSS directly as a safety net against WKWebView style inheritance.
-- `DEFAULT_XTERM_THEME` sets full ANSI palette explicitly to prevent CSS color inheritance from app theme.
+- Mobile: `@xterm/addon-canvas` (Canvas2D); WebGL desktop-only.
+- `term.open()` must be called while visible — canvas initializes at correct dimensions. `fitAddon.fit()` immediately after, then hide via `visibility:hidden` (never `display:none` — drops canvas renderer on iOS).
+- `ensureXtermDomFallback()` patches xterm DOM subtree CSS; `DEFAULT_XTERM_THEME` sets full ANSI palette explicitly.
 
 ## iOS Build
 
@@ -126,12 +124,12 @@ Server stats: TanStack Query, `staleTime: 4s`, `refetchInterval: 5s`, CPU delta 
 | Required capabilities | arm64, metal |
 | Team ID | `4VF752P8A8` (Apple Distribution: JAEYOUNG LEE) |
 | Build command | `pnpm tauri ios build` |
-| Build number policy | `YYMMDDHH.N` (UTC 기준 년월일시.배포수) — e.g. `26032308.1` |
-| Build number file | `.build_number` (gitignored — set locally before each release build) |
+| Build number | `YYMMDDHH.N` (UTC) — first upload in an hour: `.1`; each re-upload: `.2`, `.3`, … Must be strictly increasing (App Store Connect rejects -19232 if lower). Get hour: `date -u +"%y%m%d%H"` |
+| Build number file | `.build_number` (gitignored — set locally: `echo "26032314.1" > .build_number`) |
 | Signing | `CODE_SIGN_STYLE: Automatic` in `project.yml` |
 | Upload | Transporter app (drag `.ipa` from `src-tauri/gen/apple/build/arm64/`) |
 
-**Build number**: Tauri overwrites `CFBundleVersion` — fixed by `postBuildScripts` in `project.yml` that patches bundle Info.plist from `.build_number` file (runs after ProcessInfoPlistFile, before CodeSign).
+Tauri overwrites `CFBundleVersion` — `postBuildScripts` in `project.yml` re-patches Info.plist from `.build_number` after ProcessInfoPlistFile and before CodeSign.
 
 **libapp.a conflict**: `project.yml` excludes `- path: Externals` from sources. After release build, delete `Externals/arm64/release/` before dev builds to avoid "Multiple commands produce libapp.a".
 
