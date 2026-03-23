@@ -67,7 +67,7 @@ src-tauri/src/
 │   ├── tunnel.rs       — Port forwarding
 │   ├── known_hosts.rs  — Host key verification
 │   └── types.rs        — ConnectionConfig, AuthMethod (manual Debug redacts secrets)
-└── commands/           — ssh, tunnel, credential, admob, ime_log, viewport_log
+└── commands/           — ssh, tunnel, credential, admob, ime_log, viewport_log, debug_log
 ```
 
 ## IPC Commands

@@ -52,7 +52,7 @@ export async function hideBanner() {
  *
  * Display rules:
  *  - Cold start (first ever launch): always show (if ads enabled)
- *  - Background → foreground: show only if ≥ 4 hours since last display
+ *  - Background → foreground: show only if ≥ 1 hour since last display
  *  - Ad not available (SDK error): invisible, no space reserved
  *  - User disabled ads: never show
  */

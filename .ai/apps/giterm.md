@@ -16,7 +16,7 @@
 | File | Purpose |
 |------|---------|
 | `src-tauri/src/ssh/` | SSH module (client, session, tunnel, known_hosts, types) |
-| `src-tauri/src/commands/` | ssh, tunnel, credential, ime_log, viewport_log |
+| `src-tauri/src/commands/` | ssh, tunnel, credential, admob, ime_log, viewport_log, debug_log |
 | `src/widgets/terminal-view/` | TerminalView, HiddenImeInput, KeyboardToolbar + model hooks |
 | `src/widgets/mobile-layout/` | MobileLayout (safe area SSOT), MobileConnectionList, MobileSessionTabBar |
 | `src/features/ad-banner/` | AdMob banner — ObjC2 runtime (admob.rs), useAdBanner hook |

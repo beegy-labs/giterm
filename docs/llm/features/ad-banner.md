@@ -7,7 +7,7 @@
 ```
 features/ad-banner/
 ├── model/
-│   ├── adBannerStore.ts    — Zustand store (userId, adsEnabled, bannerType, lastShownAt)
+│   ├── adBannerStore.ts    — Zustand store (userId, adsEnabled, bannerType, isBannerVisible)
 │   └── useAdBanner.ts      — ATT → SDK init, cold-start ad, foreground ad, CSS var
 ├── ui/
 │   ├── AdBanner.tsx        — Mounts useAdBanner(); renders AdMob overlay or CoupangBanner
@@ -62,7 +62,7 @@ ATT block dropped before `.await` to keep future `Send` (block2::RcBlock is !Sen
 |-------|---------|---------|
 | `userId` | `localStorage["giterm:user-id"]` | `crypto.randomUUID()` on first launch |
 | `adsEnabled` | `localStorage["giterm:ads-enabled"]` | `true` |
-| `lastShownAt` | `localStorage["giterm:ad-last-shown"]` | `0` |
+| `lastShownAt` | `localStorage["giterm:ad-last-shown"]` (helper only, not in store) | `0` |
 | `isBannerVisible` | memory only | `false` |
 | `bannerType` | memory only | `"none"` — `"admob" \| "coupang" \| "none"` |
 
@@ -81,7 +81,7 @@ Debug/Release app ID split: `project.yml settings.base.GAD_APP_ID` (real) vs `se
 
 DOM-based carousel banner — fallback when ATT denied.
 - Dynamically injects `https://ads-partners.coupang.com/g.js` script
-- `PartnersCoupang.G({ id: 974809, template: "carousel", trackingCode: "AF6623822", width: "340", height: "50" })`
+- `PartnersCoupang.G({ id: 974809, template: "carousel", trackingCode: "AF6623822", width: "340", height: "50", tsource: "" })`
 - Has close (×) button. Script removed on unmount.
 - CSP (`tauri.conf.json`): allows `https://ads-partners.coupang.com`, `https://coupa.ng`, `https://link.coupang.com`
 
