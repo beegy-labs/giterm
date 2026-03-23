@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; script-src 'self' https://ads-partners.coupang.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src ipc: http://ipc.localhost https://ads-partners.coupang.com https://coupa.ng https://link.coupang.com"
     }
   },
   "bundle": {

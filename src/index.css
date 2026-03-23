@@ -268,3 +268,25 @@ textarea:focus {
         touch-action: manipulation;
     }
 }
+
+/*
+ * xterm iOS fallback
+ *
+ * On some iPhone WKWebView runs, xterm's per-instance injected theme CSS is not
+ * reliably applied on first paint. When that happens, the DOM renderer inherits
+ * app theme colors and the terminal appears washed out or blank.
+ *
+ * Keep a global black/white fallback so xterm still looks like a terminal even
+ * if the injected theme style is delayed or skipped.
+ */
+.xterm {
+    background: #000000;
+    color: #ffffff;
+}
+
+.xterm .xterm-viewport,
+.xterm .xterm-screen,
+.xterm .xterm-rows {
+    background: #000000;
+    color: #ffffff;
+}

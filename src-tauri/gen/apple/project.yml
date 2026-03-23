@@ -54,7 +54,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         CFBundleShortVersionString: 1.0.0
         CFBundleVersion: "260322.1"
-        GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
+        GADApplicationIdentifier: $(GAD_APP_ID)
+        NSUserTrackingUsageDescription: "광고를 개인화하기 위해 기기 식별자를 사용합니다."
         SKAdNetworkItems:
           - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
     entitlements:
@@ -68,6 +69,10 @@ targets:
         DEVELOPMENT_TEAM: 4VF752P8A8
         CODE_SIGN_STYLE: Automatic
         ENABLE_BITCODE: false
+        GAD_APP_ID: ca-app-pub-5019286268878126~2387220377
+      configurations:
+        Debug:
+          GAD_APP_ID: ca-app-pub-3940256099942544~1458002511
         ARCHS: [arm64]
         VALID_ARCHS: arm64
         LIBRARY_SEARCH_PATHS[arch=x86_64]: $(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)

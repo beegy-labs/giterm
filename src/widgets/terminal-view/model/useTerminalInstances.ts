@@ -1,11 +1,111 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { Terminal as XTerminal } from "@xterm/xterm";
+import { CanvasAddon } from "@xterm/addon-canvas";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { sshResize } from "@/features/ssh-connect";
 import type { TerminalSession } from "@/entities/session";
 import type { HiddenImeInputHandle } from "../ui/HiddenImeInput";
 import type { TermInstance } from "./types";
+
+const DEFAULT_XTERM_THEME = {
+  background: "#000000",
+  foreground: "#ffffff",
+  cursor: "#ffffff",
+  cursorAccent: "#000000",
+  selectionBackground: "rgba(255, 255, 255, 0.3)",
+  black: "#2e3436",
+  red: "#cc0000",
+  green: "#4e9a06",
+  yellow: "#c4a000",
+  blue: "#3465a4",
+  magenta: "#75507b",
+  cyan: "#06989a",
+  white: "#d3d7cf",
+  brightBlack: "#555753",
+  brightRed: "#ef2929",
+  brightGreen: "#8ae234",
+  brightYellow: "#fce94f",
+  brightBlue: "#729fcf",
+  brightMagenta: "#ad7fa8",
+  brightCyan: "#34e2e2",
+  brightWhite: "#eeeeec",
+} as const;
+
+const FALLBACK_XTERM_STYLE_ID = "giterm-xterm-dom-fallback";
+
+function setTerminalVisibility(el: HTMLDivElement, visible: boolean): void {
+  el.style.display = "block";
+  el.style.visibility = visible ? "visible" : "hidden";
+  el.style.pointerEvents = visible ? "auto" : "none";
+}
+
+function ensureXtermDomFallback(term: XTerminal): void {
+  const host = term.element;
+  if (!host) return;
+
+  host.style.backgroundColor = DEFAULT_XTERM_THEME.background;
+  host.style.color = DEFAULT_XTERM_THEME.foreground;
+
+  for (const selector of [".xterm-viewport", ".xterm-screen", ".xterm-rows"]) {
+    const el = host.querySelector<HTMLElement>(selector);
+    if (!el) continue;
+    el.style.backgroundColor = DEFAULT_XTERM_THEME.background;
+    el.style.color = DEFAULT_XTERM_THEME.foreground;
+    el.style.opacity = "1";
+    el.style.filter = "none";
+  }
+
+  const rows = host.querySelector<HTMLElement>(".xterm-rows");
+  if (rows) {
+    rows.style.whiteSpace = "pre";
+    rows.style.pointerEvents = "none";
+    rows.style.fontFamily = "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace";
+  }
+
+  const existing = host.querySelector<HTMLStyleElement>(`#${FALLBACK_XTERM_STYLE_ID}`);
+  if (existing) return;
+
+  const style = document.createElement("style");
+  style.id = FALLBACK_XTERM_STYLE_ID;
+  style.textContent = `
+    .xterm .xterm-rows { color: ${DEFAULT_XTERM_THEME.foreground}; }
+    .xterm .xterm-rows .xterm-dim { opacity: 1 !important; filter: none !important; }
+    .xterm .xterm-rows .xterm-fg-0 { color: ${DEFAULT_XTERM_THEME.black}; }
+    .xterm .xterm-rows .xterm-fg-1 { color: ${DEFAULT_XTERM_THEME.red}; }
+    .xterm .xterm-rows .xterm-fg-2 { color: ${DEFAULT_XTERM_THEME.green}; }
+    .xterm .xterm-rows .xterm-fg-3 { color: ${DEFAULT_XTERM_THEME.yellow}; }
+    .xterm .xterm-rows .xterm-fg-4 { color: ${DEFAULT_XTERM_THEME.blue}; }
+    .xterm .xterm-rows .xterm-fg-5 { color: ${DEFAULT_XTERM_THEME.magenta}; }
+    .xterm .xterm-rows .xterm-fg-6 { color: ${DEFAULT_XTERM_THEME.cyan}; }
+    .xterm .xterm-rows .xterm-fg-7 { color: ${DEFAULT_XTERM_THEME.white}; }
+    .xterm .xterm-rows .xterm-fg-8 { color: ${DEFAULT_XTERM_THEME.brightBlack}; }
+    .xterm .xterm-rows .xterm-fg-9 { color: ${DEFAULT_XTERM_THEME.brightRed}; }
+    .xterm .xterm-rows .xterm-fg-10 { color: ${DEFAULT_XTERM_THEME.brightGreen}; }
+    .xterm .xterm-rows .xterm-fg-11 { color: ${DEFAULT_XTERM_THEME.brightYellow}; }
+    .xterm .xterm-rows .xterm-fg-12 { color: ${DEFAULT_XTERM_THEME.brightBlue}; }
+    .xterm .xterm-rows .xterm-fg-13 { color: ${DEFAULT_XTERM_THEME.brightMagenta}; }
+    .xterm .xterm-rows .xterm-fg-14 { color: ${DEFAULT_XTERM_THEME.brightCyan}; }
+    .xterm .xterm-rows .xterm-fg-15 { color: ${DEFAULT_XTERM_THEME.brightWhite}; }
+    .xterm .xterm-rows .xterm-bg-0 { background-color: ${DEFAULT_XTERM_THEME.black}; }
+    .xterm .xterm-rows .xterm-bg-1 { background-color: ${DEFAULT_XTERM_THEME.red}; }
+    .xterm .xterm-rows .xterm-bg-2 { background-color: ${DEFAULT_XTERM_THEME.green}; }
+    .xterm .xterm-rows .xterm-bg-3 { background-color: ${DEFAULT_XTERM_THEME.yellow}; }
+    .xterm .xterm-rows .xterm-bg-4 { background-color: ${DEFAULT_XTERM_THEME.blue}; }
+    .xterm .xterm-rows .xterm-bg-5 { background-color: ${DEFAULT_XTERM_THEME.magenta}; }
+    .xterm .xterm-rows .xterm-bg-6 { background-color: ${DEFAULT_XTERM_THEME.cyan}; }
+    .xterm .xterm-rows .xterm-bg-7 { background-color: ${DEFAULT_XTERM_THEME.white}; }
+    .xterm .xterm-rows .xterm-bg-8 { background-color: ${DEFAULT_XTERM_THEME.brightBlack}; }
+    .xterm .xterm-rows .xterm-bg-9 { background-color: ${DEFAULT_XTERM_THEME.brightRed}; }
+    .xterm .xterm-rows .xterm-bg-10 { background-color: ${DEFAULT_XTERM_THEME.brightGreen}; }
+    .xterm .xterm-rows .xterm-bg-11 { background-color: ${DEFAULT_XTERM_THEME.brightYellow}; }
+    .xterm .xterm-rows .xterm-bg-12 { background-color: ${DEFAULT_XTERM_THEME.brightBlue}; }
+    .xterm .xterm-rows .xterm-bg-13 { background-color: ${DEFAULT_XTERM_THEME.brightMagenta}; }
+    .xterm .xterm-rows .xterm-bg-14 { background-color: ${DEFAULT_XTERM_THEME.brightCyan}; }
+    .xterm .xterm-rows .xterm-bg-15 { background-color: ${DEFAULT_XTERM_THEME.brightWhite}; }
+  `;
+  host.appendChild(style);
+}
 
 export function useTerminalInstances(args: {
   sessions: TerminalSession[];
@@ -60,17 +160,20 @@ export function useTerminalInstances(args: {
       const termEl = document.createElement("div");
       termEl.style.width = "100%";
       termEl.style.height = "100%";
-      termEl.style.display = "none";
       termEl.style.position = "absolute";
       termEl.style.top = "0";
       termEl.style.left = "0";
+      // Keep xterm mounted in layout after open(). Toggling display:none on iOS
+      // can leave only the text layer visible while the canvas renderer drops out.
+      setTerminalVisibility(termEl, true);
       container.appendChild(termEl);
 
       const term = new XTerminal({
-        theme: { background: "#000000", foreground: "#ffffff" },
+        theme: DEFAULT_XTERM_THEME,
         fontFamily:
           "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
         fontSize: isMobile ? 12 : fontSizeRef.current,
+        minimumContrastRatio: 4.5,
         scrollback: isMobile ? 1000 : 5000,
         cursorBlink: true,
         allowProposedApi: true,
@@ -80,6 +183,24 @@ export function useTerminalInstances(args: {
       const fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
       term.open(termEl);
+
+      let canvasAddon: CanvasAddon | null = null;
+      if (isMobile) {
+        try {
+          const mobileCanvasAddon = new CanvasAddon();
+          term.loadAddon(mobileCanvasAddon);
+          canvasAddon = mobileCanvasAddon;
+        } catch {
+          // Fall back to xterm's default DOM renderer if canvas initialization fails.
+        }
+      }
+
+      // iPhone WKWebView can render xterm's DOM tree without fully applying the
+      // runtime-generated theme CSS. Normalize the subtree directly so the base
+      // terminal appearance does not depend on those injected styles.
+      ensureXtermDomFallback(term);
+      fitAddon.fit();
+      setTerminalVisibility(termEl, id === activeSessionId);
 
       // Fix #4: Skip WebGL on mobile — iOS WKWebView has a limited number of
       // WebGL contexts (8~16). Each xterm instance consumes one, and exceeding
@@ -103,6 +224,7 @@ export function useTerminalInstances(args: {
       instancesRef.current.set(id, {
         terminal: term,
         fitAddon,
+        canvasAddon,
         webglAddon: webgl,
         containerEl: termEl,
       });
@@ -135,6 +257,7 @@ export function useTerminalInstances(args: {
     // Destroy remaining orphaned instances (truly removed sessions)
     for (const [id, inst] of instancesRef.current) {
       if (!currentIds.has(id)) {
+        inst.canvasAddon?.dispose();
         inst.webglAddon?.dispose();
         inst.terminal.dispose();
         inst.containerEl.remove();
@@ -155,7 +278,7 @@ export function useTerminalInstances(args: {
     if (prevId && prevId !== activeSessionId) {
       const prevInst = instancesRef.current.get(prevId);
       if (prevInst) {
-        prevInst.containerEl.style.display = "none";
+        setTerminalVisibility(prevInst.containerEl, false);
       }
     }
 
@@ -163,8 +286,9 @@ export function useTerminalInstances(args: {
     if (activeSessionId) {
       const inst = instancesRef.current.get(activeSessionId);
       if (inst) {
-        inst.containerEl.style.display = "block";
+        setTerminalVisibility(inst.containerEl, true);
         requestAnimationFrame(() => {
+          ensureXtermDomFallback(inst.terminal);
           inst.fitAddon.fit();
           sshResize(activeSessionId, inst.terminal.cols, inst.terminal.rows).catch(
             console.error,
@@ -234,6 +358,7 @@ export function useTerminalInstances(args: {
   useEffect(() => {
     return () => {
       for (const [, inst] of instancesRef.current) {
+        inst.canvasAddon?.dispose();
         inst.webglAddon?.dispose();
         inst.terminal.dispose();
         inst.containerEl.remove();

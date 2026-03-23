@@ -10,7 +10,7 @@ use super::client::SshClient;
 use super::known_hosts::KnownHostsStore;
 use super::types::{AuthMethod, ConnectionConfig, SshDataPayload, SshDisconnectPayload};
 
-const SSH_CONNECT_TIMEOUT: Duration = Duration::from_secs(60);
+const SSH_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const SSH_EXEC_TIMEOUT: Duration = Duration::from_secs(30);
 const SSH_INACTIVITY_TIMEOUT: Duration = Duration::from_secs(600);
 const SSH_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(15);

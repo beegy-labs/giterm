@@ -24,7 +24,7 @@ interface SshConnectConfig {
   jumpAuthMethod?: PasswordAuth | PrivateKeyAuth | null;
 }
 
-const CONNECT_TIMEOUT_MS = 65_000;
+const CONNECT_TIMEOUT_MS = 15_000;
 
 function withTimeout<T>(promise: Promise<T>, ms = CONNECT_TIMEOUT_MS): Promise<T> {
   let timerId: ReturnType<typeof setTimeout>;

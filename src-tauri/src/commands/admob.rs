@@ -14,6 +14,70 @@ use std::sync::Mutex;
 #[cfg(target_os = "ios")]
 static BANNER_PTR: Mutex<Option<usize>> = Mutex::new(None);
 
+/// Request App Tracking Transparency authorization (iOS 14+).
+/// Returns "authorized" | "denied" | "restricted" | "notDetermined".
+/// Call before admob_init so AdMob can serve personalized ads.
+#[tauri::command]
+#[specta::specta]
+pub async fn admob_request_att() -> String {
+    #[cfg(target_os = "ios")]
+    {
+        use std::sync::{Arc, Mutex as StdMutex};
+        use tokio::sync::oneshot;
+        use objc2::runtime::{AnyClass, AnyObject};
+        use objc2::msg_send;
+        use block2::RcBlock;
+
+        let Some(att_cls) = (unsafe { AnyClass::get(c"ATTrackingManager") }) else {
+            log::warn!("[ATT] ATTrackingManager not found");
+            return "authorized".to_string();
+        };
+
+        // If already determined, return current status immediately.
+        let current: u64 = unsafe { msg_send![att_cls, trackingAuthorizationStatus] };
+        if current != 0 {
+            return att_status_str(current).to_string();
+        }
+
+        // Request authorization — completion handler called on main thread by OS.
+        // Drop the block before `.await` so the future stays Send.
+        // ObjC framework retains the block until after it's called, so the
+        // closure (and captured tx_clone Arc) remains alive.
+        let (tx, rx) = oneshot::channel::<u64>();
+        let tx = Arc::new(StdMutex::new(Some(tx)));
+        unsafe {
+            let tx_clone = Arc::clone(&tx);
+            let block = RcBlock::new(move |status: u64| {
+                if let Ok(mut guard) = tx_clone.lock() {
+                    if let Some(sender) = guard.take() {
+                        let _ = sender.send(status);
+                    }
+                }
+            });
+            let _: () = msg_send![
+                att_cls,
+                requestTrackingAuthorizationWithCompletionHandler: &*block
+            ];
+            // block dropped here — ObjC has already retained it
+        }
+        let status = rx.await.unwrap_or(2);
+        log::info!("[ATT] Authorization status: {}", status);
+        return att_status_str(status).to_string();
+    }
+    #[cfg(not(target_os = "ios"))]
+    "authorized".to_string()
+}
+
+#[cfg(target_os = "ios")]
+fn att_status_str(status: u64) -> &'static str {
+    match status {
+        3 => "authorized",
+        1 => "restricted",
+        2 => "denied",
+        _ => "notDetermined",
+    }
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn admob_init() {
@@ -28,6 +92,27 @@ pub fn admob_init() {
         };
         let shared: *mut AnyObject = msg_send![cls, sharedInstance];
         if shared.is_null() { return; }
+
+        // Register test device so TestFlight builds show test ads.
+        // Build an NSArray<NSString> via ObjC2 runtime (no objc2-foundation dep needed).
+        let nsstring_cls = AnyClass::get(c"NSString");
+        let nsarray_cls = AnyClass::get(c"NSArray");
+        if let (Some(str_cls), Some(arr_cls)) = (nsstring_cls, nsarray_cls) {
+            let raw = b"31F5DA0E-DD93-4BF6-AB1D-4FD384E4CC44\0";
+            let device_str: *mut AnyObject = msg_send![
+                str_cls, stringWithUTF8String: raw.as_ptr() as *const i8
+            ];
+            if !device_str.is_null() {
+                let test_ids: *mut AnyObject = msg_send![
+                    arr_cls, arrayWithObject: device_str
+                ];
+                let config: *mut AnyObject = msg_send![shared, requestConfiguration];
+                if !config.is_null() && !test_ids.is_null() {
+                    let _: () = msg_send![config, setTestDeviceIdentifiers: test_ids];
+                }
+            }
+        }
+
         let _: () = msg_send![shared, startWithCompletionHandler: std::ptr::null::<AnyObject>()];
         log::info!("[AdMob] SDK init requested");
     }

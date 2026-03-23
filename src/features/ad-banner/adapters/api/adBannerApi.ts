@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export function admobRequestAtt(): Promise<"authorized" | "denied" | "restricted" | "notDetermined"> {
+  return invoke("admob_request_att");
+}
+
 export function admobInit(): Promise<void> {
   return invoke("admob_init");
 }

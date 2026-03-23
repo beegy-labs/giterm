@@ -19,8 +19,6 @@ import { useTerminalInstances } from "../model/useTerminalInstances";
 import { useSshEvents } from "../model/useSshEvents";
 import { useTouchGestures } from "../model/useTouchGestures";
 
-import "@xterm/xterm/css/xterm.css";
-
 interface TerminalViewProps {
   showToolbar?: boolean;
 }

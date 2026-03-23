@@ -1,6 +1,6 @@
 # giterm — App SSOT
 
-> SSH terminal client | **Last Updated**: 2026-03-22
+> SSH terminal client | **Last Updated**: 2026-03-23
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@
 | Backend | Rust | 1.93+ |
 | SSH | russh | 0.57.x |
 | Frontend | React 19 + TypeScript 5.9+ | latest |
-| Terminal UI | xterm.js + WebGL addon | 6.x |
+| Terminal UI | xterm.js 6 + Canvas/WebGL addons | 6.x |
 | UI | shadcn/ui + Tailwind CSS v4 | latest |
 | State | Zustand + TanStack Query | 5.x |
 | Type Bridge | tauri-specta v2 | 2.0.0-rc |
@@ -83,9 +83,9 @@ src-tauri/src/
 | `ssh_host_key_verify_respond` | FE→BE | Accept/reject host key (HostKeyVerifyDialog) |
 | `credential_store/get/delete/delete_all` | FE→BE | OS keychain CRUD |
 | `tunnel_start` / `tunnel_stop` | FE→BE | Local port forwarding |
+| `admob_request_att` | FE→BE | ATT authorization popup (iOS 14+) — call before admob_init |
 | `admob_init` / `admob_banner_show` / `admob_banner_hide` / `admob_banner_is_visible` | FE→BE | AdMob SDK init + GADBannerView lifecycle (iOS ObjC2 runtime) |
-| `ime_log_start/append/stop` | FE→BE | Dev IME file logging |
-| `vp_log_start/append/stop` | FE→BE | Dev viewport file logging |
+| `ime_log_*/vp_log_*` | FE→BE | Dev file logging (IME + viewport) |
 | `ssh-data` event | BE→FE | Stream remote output |
 | `ssh-disconnect` event | BE→FE | Notify disconnection |
 | `ssh-host-key-verify` event | BE→FE | Host key verification prompt (unknown/changed) |
@@ -104,15 +104,18 @@ Server stats: TanStack Query, `staleTime: 4s`, `refetchInterval: 5s`, CPU delta 
 ## Multi-Session
 
 - `sessionStore` holds `sessions[]` + `activeIndex`; `selectActiveSession` computes active session
-- `useTerminalInstances` hook manages `Map<sessionId, TermInstance>` (xterm + DOM node); ResizeObserver: `fit()` debounced 100ms, `sshResize()` debounced 150ms
+- `useTerminalInstances` hook manages `Map<sessionId, TermInstance>` (xterm + DOM node); ResizeObserver: `fit()` debounced 100ms, `sshResize()` debounced 150ms; mobile uses `CanvasAddon`, desktop uses `WebglAddon`
 - `useSshEvents` hook subscribes to SSH data/disconnect via adapter (not raw `listen()`)
 - `useTouchGestures` hook encapsulates all touch/scroll/selection logic
-- Tab switch: `display:none/block` — no re-creation (preserves scrollback)
 - xterm.js scrollback: 1000 (mobile) / 5000 (desktop)
 
-## Development
+### iOS Terminal Rendering
 
-See `CLAUDE.md` for full command list. iOS-specific: `(echo 9; sleep 600) | pnpm tauri ios dev` (iPhone 17 Pro Max). Kill stale port: `lsof -ti:1420 | xargs -r kill -9`.
+- iPhone WKWebView DOM renderer is unreliable — may show white/faint text even when simulator looks correct.
+- Fix: mobile loads `@xterm/addon-canvas` (Canvas2D) after `term.open()`; WebGL desktop-only.
+- `term.open()` must be called while element is visible (`display:block`) so canvas initializes at correct dimensions. Call `fitAddon.fit()` immediately after, then hide via `visibility:hidden` (never `display:none` — drops canvas renderer on iOS).
+- `ensureXtermDomFallback()` patches xterm DOM subtree CSS directly as a safety net against WKWebView style inheritance.
+- `DEFAULT_XTERM_THEME` sets full ANSI palette explicitly to prevent CSS color inheritance from app theme.
 
 ## iOS Build
 
@@ -123,7 +126,7 @@ See `CLAUDE.md` for full command list. iOS-specific: `(echo 9; sleep 600) | pnpm
 | Required capabilities | arm64, metal |
 | Team ID | `4VF752P8A8` (Apple Distribution: JAEYOUNG LEE) |
 | Build command | `pnpm tauri ios build` |
-| Build number policy | `YYMMDDHH.N` (년월일시.배포수) — e.g. `26030516.4` |
+| Build number policy | `YYMMDDHH.N` (UTC 기준 년월일시.배포수) — e.g. `26032308.1` |
 | Build number file | `.build_number` (gitignored — set locally before each release build) |
 | Signing | `CODE_SIGN_STYLE: Automatic` in `project.yml` |
 | Upload | Transporter app (drag `.ipa` from `src-tauri/gen/apple/build/arm64/`) |
@@ -140,6 +143,8 @@ See `CLAUDE.md` for full command list. iOS-specific: `(echo 9; sleep 600) | pnpm
 - **iOS caret**: 10-layer fix. See `docs/llm/features/ios-caret-fix.md`.
 - **iOS input zoom**: font-size < 16px triggers zoom. Fixed in `src/shared/lib/iosInputFix.ts`.
 - **iOS keyboard resize**: `fit()` debounced 100ms, `sshResize()` 150ms, `--vvh` 100ms.
+- **Touch selection drift (normal mode)**: Long-press fires 400ms after touchStart. New SSH output arriving during that wait increments `baseY`, shifting selection down. Fix: snapshot `baseY` at touchStart (`selectionBaseYRef`) and pass as `preBaseY` to `touchToCell`. Alt screen (tmux) unaffected (`baseY` always 0).
+- **xterm on iPhone**: simulator OK ≠ real device OK. Use `@xterm/addon-canvas` on mobile; `ensureXtermDomFallback()` patches DOM CSS. Init order: `open()` while visible → `fit()` → hide via `visibility:hidden` (never `display:none` — drops canvas renderer; opening hidden causes 0×0 canvas, `fit()` no-ops on cell.width===0).
 - **WebGL on iOS**: hard context limit — skip WebGL addon on mobile (`isMobile` in `useTerminalInstances`).
 - **Tab switching**: overlay pattern only — conditional render destroys xterm instances.
 - **AdMob simulator**: `GADMobileAds class not found` is expected (graceful ObjC2 no-op). `GADApplicationIdentifier` in `project.yml info.properties` required or app crashes on launch.

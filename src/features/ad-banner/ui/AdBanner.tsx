@@ -1,18 +1,37 @@
 import { useAdBannerStore } from "../model/adBannerStore";
-import { useAdBanner } from "../model/useAdBanner";
+import { useAdBanner, hideBanner } from "../model/useAdBanner";
+import { CoupangBanner } from "./CoupangBanner";
 
 /**
- * AdBanner — mounts the AdMob banner logic.
+ * AdBanner — mounts ad logic and renders the appropriate banner.
  *
- * The actual native banner view is managed by the ObjC bridge (AdMobBridge.m).
- * This component only handles:
- *   - SDK init + display logic via useAdBanner()
- *   - Exposing setAdsEnabled for the settings UI
- *
- * No visible DOM element is rendered here — the banner is a native UIView.
+ * - admob: native UIView managed by Rust/ObjC2. Renders a close button overlay.
+ * - coupang: DOM-based carousel banner with close button.
  */
 export function AdBanner() {
-  useAdBanner(); // side-effects only
+  useAdBanner();
+  const bannerType = useAdBannerStore((s) => s.bannerType);
+
+  if (bannerType === "coupang") {
+    return <CoupangBanner onClose={hideBanner} />;
+  }
+
+  if (bannerType === "admob") {
+    return (
+      <div className="relative" style={{ height: "50px" }}>
+        {/* Close button overlaid on native AdMob UIView */}
+        <button
+          type="button"
+          onClick={hideBanner}
+          className="absolute right-1 top-1 z-50 flex size-5 items-center justify-center rounded-full bg-black/40 text-[10px] text-white hover:bg-black/60"
+          aria-label="광고 닫기"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }
 

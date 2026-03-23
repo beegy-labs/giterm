@@ -4,8 +4,8 @@ const USER_ID_KEY = "giterm:user-id";
 const ADS_ENABLED_KEY = "giterm:ads-enabled";
 const LAST_SHOWN_KEY = "giterm:ad-last-shown";
 
-/** 4 hours in milliseconds */
-const BACKGROUND_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+/** 1 hour in milliseconds */
+const BACKGROUND_COOLDOWN_MS = 60 * 60 * 1000;
 
 function getOrCreateUserId(): string {
   let id = localStorage.getItem(USER_ID_KEY);
@@ -29,6 +29,8 @@ function setLastShownNow(): void {
   localStorage.setItem(LAST_SHOWN_KEY, String(Date.now()));
 }
 
+export type BannerType = "admob" | "coupang" | "none";
+
 interface AdBannerState {
   /** Stable per-install UUID — created once, never changes */
   userId: string;
@@ -36,9 +38,12 @@ interface AdBannerState {
   adsEnabled: boolean;
   /** Whether a native banner is currently showing */
   isBannerVisible: boolean;
+  /** Which banner is currently active */
+  bannerType: BannerType;
 
   setAdsEnabled: (enabled: boolean) => void;
   setBannerVisible: (visible: boolean) => void;
+  setBannerType: (type: BannerType) => void;
 
   /** Returns true if the ad should be shown based on cooldown + enabled state */
   shouldShowOnForeground: () => boolean;
@@ -52,6 +57,7 @@ export const useAdBannerStore = create<AdBannerState>(() => ({
   userId: getOrCreateUserId(),
   adsEnabled: isAdsEnabled(),
   isBannerVisible: false,
+  bannerType: "none",
 
   setAdsEnabled: (enabled) => {
     localStorage.setItem(ADS_ENABLED_KEY, String(enabled));
@@ -62,11 +68,16 @@ export const useAdBannerStore = create<AdBannerState>(() => ({
     useAdBannerStore.setState({ isBannerVisible: visible });
   },
 
+  setBannerType: (type) => {
+    useAdBannerStore.setState({ bannerType: type });
+  },
+
   shouldShowOnColdStart: () => {
     const state = useAdBannerStore.getState();
     if (!state.adsEnabled) return false;
-    // First ever launch: lastShown == 0
-    return getLastShownMs() === 0;
+    const lastShown = getLastShownMs();
+    if (lastShown === 0) return true; // first ever launch
+    return Date.now() - lastShown >= BACKGROUND_COOLDOWN_MS;
   },
 
   shouldShowOnForeground: () => {

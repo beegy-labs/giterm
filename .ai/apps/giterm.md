@@ -19,9 +19,7 @@
 | `src-tauri/src/commands/` | ssh, tunnel, credential, ime_log, viewport_log |
 | `src/widgets/terminal-view/` | TerminalView, HiddenImeInput, KeyboardToolbar + model hooks |
 | `src/widgets/mobile-layout/` | MobileLayout (safe area SSOT), MobileConnectionList, MobileSessionTabBar |
-| `src/features/ad-banner/` | AdMob banner — ObjC2 runtime (admob.rs), useAdBanner hook, AdToggle, AdDevPanel |
-| `src/widgets/keyboard-shortcuts/` | Keyboard shortcuts widget |
-| `src/widgets/sidebar/` | Connection list + server dashboard |
+| `src/features/ad-banner/` | AdMob banner — ObjC2 runtime (admob.rs), useAdBanner hook |
 | `src/features/ssh-connect/` | SSH API + events + reconnect + closeSession |
 | `src/features/server-monitor/` | Server stats parsing + query + useServerStats |
 | `src/entities/session/model/sessionStore.ts` | Sessions + `selectActiveSession` selector |
@@ -40,11 +38,12 @@
 | Korean IME (single-input) | ✓ |
 | OS keychain credentials | ✓ |
 | Host key verification (unknown/changed) | ✓ |
-| AdMob banner (iOS native, ObjC2 runtime) | ✓ |
+| AdMob + Coupang banner (ATT → AdMob or Coupang fallback) | ✓ |
 | App exit cleanup (SSH+tunnels) | ✓ |
 | iOS safe area native fix (WKWebView ObjC) | ✓ |
 | iOS input zoom fix (font-size 16px) | ✓ |
 | Tab switching (overlay pattern) | ✓ |
+| iPhone xterm: CanvasAddon + DOM fallback patch | ✓ |
 | i18n (en/ko/ja) | ⚠ (initialized, not wired) |
 
 ## Full Spec → `docs/llm/apps/giterm.md`

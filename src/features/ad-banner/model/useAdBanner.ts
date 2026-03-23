@@ -1,13 +1,10 @@
 import { useEffect } from "react";
 import { useAdBannerStore } from "./adBannerStore";
-import { admobInit, admobBannerShow, admobBannerHide } from "../adapters/api/adBannerApi";
+import { admobRequestAtt, admobInit, admobBannerShow, admobBannerHide } from "../adapters/api/adBannerApi";
 
-/**
- * AdMob banner unit IDs.
- * Replace with production IDs from the AdMob console.
- * Test IDs are safe to commit — they never serve real ads.
- */
-const AD_UNIT_ID = "ca-app-pub-3940256099942544/2934735716"; // test banner
+const AD_UNIT_ID = import.meta.env.DEV
+  ? "ca-app-pub-3940256099942544/2934735716" // Google test banner
+  : "ca-app-pub-5019286268878126/8296487753";
 
 /**
  * Read --sat CSS variable (safe-area-top in px).
@@ -20,27 +17,34 @@ function getSafeAreaTop(): number {
   return parseFloat(raw) || 0;
 }
 
-async function showBanner(userId: string, recordShown: () => void) {
+async function showAdmobBanner(userId: string, recordShown: () => void) {
   try {
     const safeAreaTop = getSafeAreaTop();
     await admobBannerShow({ adUnitId: AD_UNIT_ID, userId, safeAreaTop });
     recordShown();
     useAdBannerStore.getState().setBannerVisible(true);
-    // Inject CSS var so React layout shifts down by 50px
+    useAdBannerStore.getState().setBannerType("admob");
     document.documentElement.style.setProperty("--ad-banner-h", "50px");
   } catch (err) {
     console.warn("[AdMob] show failed:", err);
   }
 }
 
-async function hideBanner() {
-  try {
-    await admobBannerHide();
-    useAdBannerStore.getState().setBannerVisible(false);
-    document.documentElement.style.setProperty("--ad-banner-h", "0px");
-  } catch (err) {
-    console.warn("[AdMob] hide failed:", err);
+export function showCoupangBanner(recordShown: () => void) {
+  recordShown();
+  useAdBannerStore.getState().setBannerVisible(true);
+  useAdBannerStore.getState().setBannerType("coupang");
+  document.documentElement.style.setProperty("--ad-banner-h", "50px");
+}
+
+export async function hideBanner() {
+  const { bannerType } = useAdBannerStore.getState();
+  if (bannerType === "admob") {
+    try { await admobBannerHide(); } catch (err) { console.warn("[AdMob] hide failed:", err); }
   }
+  useAdBannerStore.getState().setBannerVisible(false);
+  useAdBannerStore.getState().setBannerType("none");
+  document.documentElement.style.setProperty("--ad-banner-h", "0px");
 }
 
 /**
@@ -59,13 +63,21 @@ export function useAdBanner() {
   const shouldShowOnColdStart = useAdBannerStore((s) => s.shouldShowOnColdStart);
   const shouldShowOnForeground = useAdBannerStore((s) => s.shouldShowOnForeground);
 
-  // SDK init + cold-start ad
+  // ATT → SDK init → cold-start ad (AdMob if authorized, Coupang if denied)
   useEffect(() => {
-    admobInit().catch(console.warn);
-
-    if (adsEnabled && shouldShowOnColdStart()) {
-      showBanner(userId, recordShown);
-    }
+    (async () => {
+      const attStatus = await admobRequestAtt().catch(() => "denied");
+      if (attStatus === "authorized") {
+        await admobInit().catch(console.warn);
+        if (adsEnabled && shouldShowOnColdStart()) {
+          showAdmobBanner(userId, recordShown);
+        }
+      } else {
+        if (adsEnabled && shouldShowOnColdStart()) {
+          showCoupangBanner(recordShown);
+        }
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -74,7 +86,12 @@ export function useAdBanner() {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         if (adsEnabled && shouldShowOnForeground()) {
-          showBanner(userId, recordShown);
+          const { bannerType } = useAdBannerStore.getState();
+          if (bannerType === "coupang") {
+            showCoupangBanner(recordShown);
+          } else {
+            showAdmobBanner(userId, recordShown);
+          }
         }
       }
     };
@@ -84,9 +101,7 @@ export function useAdBanner() {
 
   // When user disables ads, hide immediately
   useEffect(() => {
-    if (!adsEnabled) {
-      hideBanner();
-    }
+    if (!adsEnabled) hideBanner();
   }, [adsEnabled]);
 
   return {

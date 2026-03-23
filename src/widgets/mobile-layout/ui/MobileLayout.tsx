@@ -15,6 +15,12 @@ interface MobileLayoutProps {
   terminalView: ReactNode;
 }
 
+function getPanelClassName(visible: boolean): string {
+  return visible
+    ? "opacity-100 pointer-events-auto z-10"
+    : "opacity-0 pointer-events-none z-0";
+}
+
 export function MobileLayout({ terminalView }: MobileLayoutProps) {
   const sessions = useSessionStore((s) => s.sessions);
   useVisualViewport(); // side-effect only — sets --vvh CSS var
@@ -46,27 +52,29 @@ export function MobileLayout({ terminalView }: MobileLayoutProps) {
       name="MobileLayout"
       className="overlay-fullscreen flex flex-col overflow-hidden bg-background text-foreground"
     >
-      {/* Fix #2: Always render both views, toggle with display.
-       * Conditional rendering (ternary) unmounted the terminal section when
-       * viewing the connection list, destroying all xterm instances. */}
-      <div className={showConnections ? "flex flex-1 flex-col overflow-hidden" : "hidden"}>
-        <MobileConnectionList
-          onBack={
-            sessions.length > 0
-              ? () => setShowConnections(false)
-              : undefined
-          }
-        />
-      </div>
-      <div
-        className={showConnections ? "hidden" : "flex flex-col overflow-hidden"}
-        style={showConnections ? undefined : { height: "var(--vvh, 100vh)" }}
-      >
-        <AdBanner />
-        <MobileSessionTabBar
-          onShowConnections={() => setShowConnections(true)}
-        />
-        {terminalView}
+      {/* Keep both panels mounted and sized.
+       * display:none on the terminal branch makes xterm open() measure 0x0
+       * through the hidden ancestor chain, leaving only a broken text layer on iOS. */}
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <div className={`absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-background transition-opacity ${getPanelClassName(showConnections)}`}>
+          <MobileConnectionList
+            onBack={
+              sessions.length > 0
+                ? () => setShowConnections(false)
+                : undefined
+            }
+          />
+        </div>
+        <div
+          className={`absolute inset-x-0 top-0 flex flex-col overflow-hidden bg-background transition-opacity ${getPanelClassName(!showConnections)}`}
+          style={{ height: "var(--vvh, 100vh)" }}
+        >
+          <AdBanner />
+          <MobileSessionTabBar
+            onShowConnections={() => setShowConnections(true)}
+          />
+          {terminalView}
+        </div>
       </div>
       <ConnectionDialog />
       <HostKeyVerifyDialog />

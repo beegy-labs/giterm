@@ -26,7 +26,7 @@ features/ssh-connect/
 
 1. `startSession()` creates placeholder session (status: `connecting`)
 2. `connectFromConfig()` → `loadSecrets(conn)` → `buildSshConfig()` → `sshConnect()`
-3. `sshConnect()` → Rust backend with 65s frontend timeout (`withTimeout`)
+3. `sshConnect()` → Rust backend; Rust timeout: **10s** (`SSH_CONNECT_TIMEOUT`), FE safety net: 15s (`CONNECT_TIMEOUT_MS`)
 4. Success → `connected` | Failure → `error` with `classifySshError()` message
 
 ## Reconnect

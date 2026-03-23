@@ -1,62 +1,60 @@
 # Ad Banner — Feature SSOT
 
-> AdMob banner integration for iOS | **Last Updated**: 2026-03-22
+> AdMob + Coupang banner integration for iOS | **Last Updated**: 2026-03-23
 
 ## Structure
 
 ```
 features/ad-banner/
 ├── model/
-│   ├── adBannerStore.ts    — Zustand store (userId, adsEnabled, lastShownAt)
-│   └── useAdBanner.ts      — SDK init, cold-start ad, foreground ad, CSS var
+│   ├── adBannerStore.ts    — Zustand store (userId, adsEnabled, bannerType, lastShownAt)
+│   └── useAdBanner.ts      — ATT → SDK init, cold-start ad, foreground ad, CSS var
 ├── ui/
-│   ├── AdBanner.tsx        — Mounts useAdBanner(); returns null (native UIView)
-│   ├── AdToggle.tsx        — Inline toggle button (ads on/off indicator)
+│   ├── AdBanner.tsx        — Mounts useAdBanner(); renders AdMob overlay or CoupangBanner
+│   ├── CoupangBanner.tsx   — DOM-based Coupang Partners carousel (fallback)
 │   └── AdDevPanel.tsx      — DEV-only panel (show/hide/simulate/reset)
 ├── adapters/api/
-│   └── adBannerApi.ts      — Tauri IPC wrappers (admob_init, banner_show/hide/is_visible)
+│   └── adBannerApi.ts      — Tauri IPC wrappers (admob_request_att, admob_init, banner_show/hide/is_visible)
 └── index.ts                — Public API
 ```
 
 ## Architecture
 
-Native UIView approach — no DOM element. GADBannerView is created in Rust via objc2
-runtime calls and added directly to UIWindow above WKWebView. React layout shifts via
-`--ad-banner-h` CSS variable (0px → 50px when ad loads).
+**ATT flow**: `admob_request_att()` → if authorized → AdMob (native UIView); if denied → Coupang (DOM).
 
 ```
-UIWindow
-├── WKWebView (React app)
-│   └── MobileLayout
-│       ├── [showConnections] → MobileConnectionList
-│       └── [!showConnections] →
-│           ├── MobileSessionTabBar (pt-safe-bar includes --ad-banner-h)
-│           └── TerminalView
-└── GADBannerView (native, y = safeAreaTop, h = 50px)   ← above WKWebView
+Cold start / foreground:
+  admob_request_att() → "authorized" → admob_init() → admob_banner_show() [GADBannerView]
+                      → "denied"    →                  CoupangBanner [DOM script injection]
 ```
 
-## Rust Implementation
+Native UIView approach for AdMob — GADBannerView added to UIWindow above WKWebView via ObjC2 runtime.
+React layout shifts via `--ad-banner-h` CSS variable (0px → 50px when banner loads).
 
-`src-tauri/src/commands/admob.rs` — ObjC2 runtime (no extern "C", no .m bridge needed):
+## Rust Implementation (`src-tauri/src/commands/admob.rs`)
+
+ObjC2 runtime — no extern "C", no .m bridge needed.
 
 | Command | What it does |
 |---------|-------------|
-| `admob_init` | `[GADMobileAds sharedInstance] startWithCompletionHandler:nil` |
+| `admob_request_att` | ATT `requestTrackingAuthorizationWithCompletionHandler:` via `block2::RcBlock`. Returns "authorized"\|"denied"\|"restricted"\|"notDetermined" |
+| `admob_init` | `[GADMobileAds sharedInstance] startWithCompletionHandler:nil`. Registers test device via NSArray/NSString ObjC2 runtime |
 | `admob_banner_show(adUnitId, userId, safeAreaTop)` | alloc GADBannerView, setAdUnitID, addSubview to UIWindow, loadRequest |
 | `admob_banner_hide` | `[banner removeFromSuperview]`, clears BANNER_PTR |
-| `admob_banner_is_visible` | checks static `BANNER_PTR: Mutex<Option<usize>>` |
+| `admob_banner_is_visible` | checks `static BANNER_PTR: Mutex<Option<usize>>` |
 
-Banner pointer stored as `static BANNER_PTR: Mutex<Option<usize>>` (usize = raw pointer).
-UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`.
+ATT block dropped before `.await` to keep future `Send` (block2::RcBlock is !Send).
 
 ## Display Rules
 
 | Trigger | Condition | Action |
 |---------|-----------|--------|
-| App cold start | `lastShownAt === 0` AND `adsEnabled` | show banner |
-| Background → foreground | `Date.now() - lastShownAt >= 4h` AND `adsEnabled` | show banner |
+| App cold start | `lastShownAt === 0` OR `Date.now() - lastShownAt >= 1h` AND `adsEnabled` | show banner |
+| Background → foreground | `Date.now() - lastShownAt >= 1h` AND `adsEnabled` | show banner |
 | User disables ads | `adsEnabled = false` | hide banner immediately |
 | AdMob SDK not linked | `GADMobileAds class not found` | warn + no-op (graceful) |
+
+**Cooldown**: 1 hour (`BACKGROUND_COOLDOWN_MS = 60 * 60 * 1000` in `adBannerStore.ts`)
 
 ## State Store (`adBannerStore.ts`)
 
@@ -66,6 +64,26 @@ UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`
 | `adsEnabled` | `localStorage["giterm:ads-enabled"]` | `true` |
 | `lastShownAt` | `localStorage["giterm:ad-last-shown"]` | `0` |
 | `isBannerVisible` | memory only | `false` |
+| `bannerType` | memory only | `"none"` — `"admob" \| "coupang" \| "none"` |
+
+## Ad IDs
+
+| Environment | App ID | Banner Unit ID |
+|-------------|--------|----------------|
+| DEV (`import.meta.env.DEV`) | Google test (`ca-app-pub-3940256099942544~...`) | `ca-app-pub-3940256099942544/2934735716` |
+| Release | `ca-app-pub-5019286268878126~2387220377` | `ca-app-pub-5019286268878126/8296487753` |
+
+Test device ID: `31F5DA0E-DD93-4BF6-AB1D-4FD384E4CC44` (registered in `admob_init` via requestConfiguration)
+
+Debug/Release app ID split: `project.yml settings.base.GAD_APP_ID` (real) vs `settings.configurations.Debug.GAD_APP_ID` (Google test).
+
+## Coupang Banner (`CoupangBanner.tsx`)
+
+DOM-based carousel banner — fallback when ATT denied.
+- Dynamically injects `https://ads-partners.coupang.com/g.js` script
+- `PartnersCoupang.G({ id: 974809, template: "carousel", trackingCode: "AF6623822", width: "340", height: "50" })`
+- Has close (×) button. Script removed on unmount.
+- CSP (`tauri.conf.json`): allows `https://ads-partners.coupang.com`, `https://coupa.ng`, `https://link.coupang.com`
 
 ## CSS Integration
 
@@ -73,7 +91,6 @@ UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`
 - `50px` when banner loads successfully
 - `0px` when hidden or not available
 
-`src/index.css` utilities include `--ad-banner-h` in padding:
 ```css
 .pt-safe-bar    { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px)); }
 .pt-safe-header { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px) + 0.25rem); }
@@ -81,22 +98,7 @@ UIWindow holds strong ref; BANNER_PTR is just a handle for `removeFromSuperview`
 
 ## iOS Setup
 
-- `Info.plist`: `GADApplicationIdentifier` required (app crashes without it)
+- `Info.plist`: `GADApplicationIdentifier` required (app crashes without it), `NSUserTrackingUsageDescription` required (ATT popup text)
 - `SKAdNetworkItems`: `cstr6suwn9.skadnetwork` entry required for attribution
 - `Podfile`: `pod 'Google-Mobile-Ads-SDK'` in `giterm_iOS` target
-- Current IDs: test IDs — replace before production release
-
-## Public API (`index.ts`)
-
-| Export | Source | Purpose |
-|--------|--------|---------|
-| `AdBanner` | `ui/AdBanner.tsx` | Mount point — renders `null`, mounts `useAdBanner()` |
-| `AdToggle` | `ui/AdBanner.tsx` | Inline ads on/off indicator button |
-| `AdDevPanel` | `ui/AdDevPanel.tsx` | DEV-only testing panel |
-| `useAdBannerStore` | `model/adBannerStore.ts` | Store accessor (userId, adsEnabled, isBannerVisible, methods) |
-
-## AdDevPanel (DEV only)
-
-Shown when `import.meta.env.DEV`. Buttons: init SDK, show/hide banner, CSS simulate
-toggle, enable/disable ads, reset cooldown. Rolling log of last 10 actions + live state
-display (userId, adsEnabled, lastShownAt, --ad-banner-h value).
+- `Cargo.toml` iOS deps: `block2 = "0.6"` (for ATT RcBlock)
