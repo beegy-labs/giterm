@@ -69,6 +69,7 @@ targets:
         DEVELOPMENT_TEAM: 4VF752P8A8
         CODE_SIGN_STYLE: Automatic
         ENABLE_BITCODE: false
+        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
         GAD_APP_ID: ca-app-pub-5019286268878126~2387220377
       configurations:
         Debug:
