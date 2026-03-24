@@ -69,6 +69,9 @@ export function MobileLayout({ terminalView }: MobileLayoutProps) {
           className={`absolute inset-x-0 top-0 flex flex-col overflow-hidden bg-background transition-opacity ${getPanelClassName(!showConnections)}`}
           style={{ height: "var(--vvh, 100vh)" }}
         >
+          {/* Safe-area spacer: one source of truth for Dynamic Island clearance.
+           * AdBanner and MobileSessionTabBar render below this — no pt-safe-bar needed. */}
+          <div className="shrink-0" style={{ height: "var(--sat, 0px)" }} />
           <AdBanner />
           <MobileSessionTabBar
             onShowConnections={() => setShowConnections(true)}

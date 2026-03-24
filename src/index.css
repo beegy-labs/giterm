@@ -213,10 +213,10 @@
      * would reflow the fixed layout several seconds after launch.
      */
     .pt-safe-bar {
-        padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px));
+        padding-top: var(--sat, 0px);
     }
     .pt-safe-header {
-        padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px) + 0.25rem);
+        padding-top: calc(var(--sat, 0px) + 0.25rem);
     }
 }
 

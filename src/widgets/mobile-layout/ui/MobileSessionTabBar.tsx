@@ -15,7 +15,7 @@ export function MobileSessionTabBar({
   return (
     <DevFrame
       name="SessionTabBar"
-      className="shrink-0 flex items-center border-b border-border bg-card/80 pt-safe-bar"
+      className="shrink-0 flex items-center border-b border-border bg-card/80"
     >
       {/* Connections list button */}
       <button

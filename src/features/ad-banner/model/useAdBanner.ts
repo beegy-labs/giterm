@@ -28,7 +28,6 @@ async function showAdmobBanner(userId: string, recordShown: () => void): Promise
     recordShown();
     useAdBannerStore.getState().setBannerVisible(true);
     useAdBannerStore.getState().setBannerType("admob");
-    document.documentElement.style.setProperty("--ad-banner-h", "50px");
     return true;
   } catch (err: unknown) {
     console.warn("[AdMob] show failed:", err);
@@ -40,7 +39,6 @@ export function showCoupangBanner(recordShown: () => void) {
   recordShown();
   useAdBannerStore.getState().setBannerVisible(true);
   useAdBannerStore.getState().setBannerType("coupang");
-  document.documentElement.style.setProperty("--ad-banner-h", "50px");
 }
 
 export async function hideBanner() {
@@ -50,7 +48,6 @@ export async function hideBanner() {
   }
   useAdBannerStore.getState().setBannerVisible(false);
   useAdBannerStore.getState().setBannerType("none");
-  document.documentElement.style.setProperty("--ad-banner-h", "0px");
 }
 
 /**
