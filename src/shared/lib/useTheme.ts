@@ -34,7 +34,7 @@ function getSnapshot(): Theme {
   return _theme;
 }
 
-export function setTheme(theme: Theme) {
+function setTheme(theme: Theme) {
   _theme = theme;
   applyTheme(theme);
   _listeners.forEach((l) => l());
