@@ -29,7 +29,7 @@ export async function startSession(
       status: "connected",
     });
     return sessionId;
-  } catch (err) {
+  } catch (err: unknown) {
     useSessionStore.getState().updateSession(placeholderId, {
       status: "error",
       error: classifySshError(err),

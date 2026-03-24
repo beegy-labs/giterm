@@ -285,7 +285,7 @@ export function ConnectionDialog() {
       );
       await sshTestConnection({ id: editingConnection?.id ?? "test", ...config });
       setTestStatus("success");
-    } catch (err) {
+    } catch (err: unknown) {
       setTestStatus("failed");
       setTestError(classifySshError(err));
     }

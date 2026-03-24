@@ -52,7 +52,7 @@ export function DevFrame({ name, children, className, style }: DevFrameProps) {
   // Offset label below safe area for headers/bars that absorb it
   const hasSafeArea = className?.includes("pt-safe");
   const labelStyle: React.CSSProperties = hasSafeArea
-    ? { ...LABEL_STYLE, top: "env(safe-area-inset-top, 0px)" }
+    ? { ...LABEL_STYLE, top: "var(--sat, 0px)" }
     : LABEL_STYLE;
 
   return (

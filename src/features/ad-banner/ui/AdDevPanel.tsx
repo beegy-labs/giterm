@@ -40,7 +40,7 @@ function AdDevPanelInner() {
     try {
       await admobInit();
       push("✓ SDK init called");
-    } catch (e) {
+    } catch (e: unknown) {
       push(`✗ init failed: ${e}`);
     } finally {
       setBusy(false);
@@ -56,7 +56,7 @@ function AdDevPanelInner() {
       setBannerVisible(true);
       document.documentElement.style.setProperty("--ad-banner-h", "50px");
       push(`✓ banner show (sat=${sat}px, userId=${userId.slice(0, 8)}…)`);
-    } catch (e) {
+    } catch (e: unknown) {
       push(`✗ show failed: ${e}`);
     } finally {
       setBusy(false);
@@ -70,7 +70,7 @@ function AdDevPanelInner() {
       setBannerVisible(false);
       document.documentElement.style.setProperty("--ad-banner-h", "0px");
       push("✓ banner hidden");
-    } catch (e) {
+    } catch (e: unknown) {
       push(`✗ hide failed: ${e}`);
     } finally {
       setBusy(false);

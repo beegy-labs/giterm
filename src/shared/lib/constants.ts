@@ -1,3 +1,6 @@
+export const STALE_TIME_FAST = 4_000
+export const REFETCH_INTERVAL_FAST = 5_000
+
 export const SSH_DEFAULT_PORT = 22;
 export const MAX_PORT = 65535;
 export const MAX_CONNECTIONS = 5;

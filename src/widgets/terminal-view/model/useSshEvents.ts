@@ -36,7 +36,7 @@ export function useSshEvents(
             .getState()
             .updateSession(sessionId, { status: "disconnected" });
         });
-      } catch (err) {
+      } catch (err: unknown) {
         ulData();
         unlistenData = null;
         throw err;

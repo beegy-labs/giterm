@@ -62,7 +62,7 @@ export function useConnect() {
       await startSession(connectionConfig, connectionConfig.name);
       addConnection(connectionConfig);
       setOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       // startSession already marked the session as "error" in the store;
       // we just need to surface the message to the dialog UI.
       setError(classifySshError(err));

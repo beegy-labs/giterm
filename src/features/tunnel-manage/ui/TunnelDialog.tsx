@@ -72,7 +72,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       setName("");
       setLocalPort("");
       setRemotePort("");
-    } catch (err) {
+    } catch (err: unknown) {
       setError(String(err));
     }
   };
@@ -91,7 +91,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       try {
         await tunnelStop(tunnel.id);
         updateTunnel(tunnel.id, { status: "stopped" });
-      } catch (err) {
+      } catch (err: unknown) {
         updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
     } else {
@@ -104,7 +104,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
           tunnel.remotePort,
         );
         updateTunnel(tunnel.id, { status: "active", error: undefined });
-      } catch (err) {
+      } catch (err: unknown) {
         updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
     }

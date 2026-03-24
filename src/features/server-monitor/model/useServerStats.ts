@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { sshExec } from "@/shared/adapters/sshExecApi";
+import { STALE_TIME_FAST, REFETCH_INTERVAL_FAST } from "@/shared/lib/constants";
 import {
   parseServerStats,
   STATS_COMMAND,
@@ -17,8 +18,8 @@ export function useServerStats(sessionId: string | undefined) {
   const { data: stats = null, error } = useQuery({
     queryKey: ["serverStats", sessionId ?? ""],
     queryFn: () => fetchServerStats(sessionId!),
-    staleTime: 4_000,
-    refetchInterval: 5_000,
+    staleTime: STALE_TIME_FAST,
+    refetchInterval: REFETCH_INTERVAL_FAST,
     retry: false,
     enabled: !!sessionId,
   });

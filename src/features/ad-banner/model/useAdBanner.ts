@@ -30,7 +30,7 @@ async function showAdmobBanner(userId: string, recordShown: () => void): Promise
     useAdBannerStore.getState().setBannerType("admob");
     document.documentElement.style.setProperty("--ad-banner-h", "50px");
     return true;
-  } catch (err) {
+  } catch (err: unknown) {
     console.warn("[AdMob] show failed:", err);
     return false;
   }
@@ -46,7 +46,7 @@ export function showCoupangBanner(recordShown: () => void) {
 export async function hideBanner() {
   const { bannerType } = useAdBannerStore.getState();
   if (bannerType === "admob") {
-    try { await admobBannerHide(); } catch (err) { console.warn("[AdMob] hide failed:", err); }
+    try { await admobBannerHide(); } catch (err: unknown) { console.warn("[AdMob] hide failed:", err); }
   }
   useAdBannerStore.getState().setBannerVisible(false);
   useAdBannerStore.getState().setBannerType("none");
