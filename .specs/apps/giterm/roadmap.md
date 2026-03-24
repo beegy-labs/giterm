@@ -1,6 +1,6 @@
 # giterm Roadmap
 
-> Product milestones | **Last Updated**: 2026-03-22
+> Product milestones | **Last Updated**: 2026-03-24
 
 ## Milestones
 
@@ -8,7 +8,7 @@
 |-----------|------|--------|--------|
 | M1 | SSH Terminal | Q1 2026 | **Completed** |
 | M2 | Multi-tab + Extras | Q1 2026 | **Completed** |
-| M2.5 | Mobile SSH Enhancements | Q1 2026 | **Completed** |
+| M2.5 | iOS Polish | Q1 2026 | **Completed** |
 | M3 | Agent Integration | Q3 2026 | Planned |
 | M4 | Orchestration | Q4 2026 | Planned |
 
@@ -34,21 +34,24 @@ Delivered ahead of schedule alongside M1.
 - Server monitoring (CPU/RAM/Disk)
 - i18n (en/ko/ja)
 
-## M2.5: Mobile SSH Enhancements (Q1 2026) -- Completed
+## M2.5: iOS Polish (Q1 2026) -- Completed
 
-iOS mobile experience polish and monetization groundwork.
+iOS mobile experience polish and monetization.
 
-- Korean IME backspace fix (timer callback executes all actions)
-- Password persistence (tauriStorage JSON, keychain fallback)
-- iOS keyboard resize debouncing (3-layer: vvh 100ms, fit 100ms, resize 150ms)
+- Korean IME backspace fix
+- Password persistence (tauriStorage JSON + keychain)
+- iOS keyboard resize debouncing (3-layer: vvh/fit/resize)
 - App exit cleanup (SSH disconnect_all, tunnel stop_all, debug log cleanup)
-- Safe area native fix (ObjC retry loop: setMinimumViewportInset + pin frame + neutralize controller)
-- Safe area architecture (pt-safe-bar on headers only, never on containers)
-- iOS input zoom fix (font-size 16px + iosInputFix.ts SSOT)
-- Tab switching overlay pattern (xterm instances preserved across tab switches)
-- DevFrame safe area awareness (labels below Dynamic Island)
-- Header proportion fix (compact headers)
-- Ad banner slot (AdMob UI; SDK integration pending)
+- Safe area native fix (ObjC retry loop: setMinimumViewportInset + pin frame)
+- Safe area architecture (pt-safe-bar on headers only)
+- iOS input zoom fix (font-size 16px + iosInputFix.ts)
+- Tab switching overlay pattern (xterm instances preserved)
+- DevFrame safe area awareness
+- AdMob banner (ObjC2 runtime, GADBannerView, ATT consent)
+- Coupang Partners fallback (ATT denied / AdMob no-fill)
+- SSH connect timeout (10s Rust / 15s FE)
+- Touch text selection baseY drift fix
+- Dialog keyboard-aware centering
 
 ## M3: Agent Integration (Q3 2026)
 
