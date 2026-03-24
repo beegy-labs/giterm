@@ -4,7 +4,6 @@ import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
-import { AdToggle, AdDevPanel } from "@/features/ad-banner";
 import {
   useConnectionStore,
   ConnectionItem,
@@ -130,12 +129,6 @@ export function Sidebar() {
           <ArrowRightLeft className="size-3.5" />
           Tunnels
         </Button>
-        <div className="px-2 py-1">
-          <AdToggle />
-        </div>
-        <div className="px-1">
-          <AdDevPanel />
-        </div>
       </div>
 
       <TunnelDialog

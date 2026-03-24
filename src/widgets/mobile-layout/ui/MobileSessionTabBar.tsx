@@ -1,8 +1,8 @@
-import { Plus, X, List } from "lucide-react";
+import { X, List } from "lucide-react";
 import { DevFrame } from "@/shared/ui/dev-frame";
 import { StatusDot } from "@/shared/ui/status-dot";
-import { useConnectDialogStore, closeSession } from "@/features/ssh-connect";
-import { useSessionStore, MAX_SESSIONS } from "@/entities/session";
+import { closeSession } from "@/features/ssh-connect";
+import { useSessionStore } from "@/entities/session";
 
 export function MobileSessionTabBar({
   onShowConnections,
@@ -12,8 +12,6 @@ export function MobileSessionTabBar({
   const sessions = useSessionStore((s) => s.sessions);
   const activeIndex = useSessionStore((s) => s.activeIndex);
   const setActiveIndex = useSessionStore((s) => s.setActiveIndex);
-  const setDialogOpen = useConnectDialogStore((s) => s.setOpen);
-
   return (
     <DevFrame
       name="SessionTabBar"
@@ -54,15 +52,6 @@ export function MobileSessionTabBar({
         ))}
       </div>
 
-      {/* New session button */}
-      {sessions.length < MAX_SESSIONS && (
-        <button
-          className="flex shrink-0 items-center justify-center px-3 py-2.5 text-muted-foreground transition-colors active:text-foreground"
-          onClick={() => setDialogOpen(true)}
-        >
-          <Plus className="size-4" />
-        </button>
-      )}
     </DevFrame>
   );
 }
