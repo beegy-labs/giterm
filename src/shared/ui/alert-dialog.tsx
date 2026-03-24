@@ -59,7 +59,7 @@ function AlertDialogContent({
        * on the dialog, so the native input caret renders at the correct position.
        * pointer-events-none lets overlay dismiss clicks pass through the wrapper.
        */}
-      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none" style={{ height: "var(--vvh, var(--app-h, 100vh))" }}>
         <AlertDialogPrimitive.Content
           data-slot="alert-dialog-content"
           data-size={size}
