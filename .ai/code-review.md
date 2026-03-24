@@ -1,6 +1,6 @@
 # Code Review
 
-> CDD Layer 1 — Review checklist pointer (≤50 lines) | **Last Updated**: 2026-03-24
+> CDD Layer 1 — Review checklist pointer | **Last Updated**: 2026-03-24
 
 ## Before Reviewing
 
@@ -26,6 +26,7 @@ Read `docs/llm/policies/patterns.md` — the authoritative 2026 patterns referen
 
 ### Zustand
 - [ ] Selectors are exported named functions, not inline arrows
+- [ ] Object/array selectors wrapped with `useShallow` (Zustand 5 — no `useShallow` = infinite loop)
 - [ ] `partialize` strips secrets before persistence
 - [ ] Outside React: use `useStore.getState()` / `.setState()`
 
