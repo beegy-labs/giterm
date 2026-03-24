@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAdBannerStore } from "./adBannerStore";
-import { admobRequestAtt, admobInit, admobBannerShow, admobBannerHide } from "../adapters/api/adBannerApi";
+import { admobRequestAtt, admobInit, admobBannerShow, admobBannerHide, admobBannerIsVisible } from "../adapters/api/adBannerApi";
 
 const AD_UNIT_ID = import.meta.env.DEV
   ? "ca-app-pub-3940256099942544/2934735716" // Google test banner
@@ -17,16 +17,22 @@ function getSafeAreaTop(): number {
   return parseFloat(raw) || 0;
 }
 
-async function showAdmobBanner(userId: string, recordShown: () => void) {
+async function showAdmobBanner(userId: string, recordShown: () => void): Promise<boolean> {
   try {
     const safeAreaTop = getSafeAreaTop();
     await admobBannerShow({ adUnitId: AD_UNIT_ID, userId, safeAreaTop });
+    // If the native GADBannerView was not actually created (SDK not linked, etc.),
+    // BANNER_PTR stays None → fall back to Coupang.
+    const visible = await admobBannerIsVisible();
+    if (!visible) return false;
     recordShown();
     useAdBannerStore.getState().setBannerVisible(true);
     useAdBannerStore.getState().setBannerType("admob");
     document.documentElement.style.setProperty("--ad-banner-h", "50px");
+    return true;
   } catch (err) {
     console.warn("[AdMob] show failed:", err);
+    return false;
   }
 }
 
@@ -70,7 +76,8 @@ export function useAdBanner() {
       if (attStatus === "authorized") {
         await admobInit().catch(console.warn);
         if (adsEnabled && shouldShowOnColdStart()) {
-          showAdmobBanner(userId, recordShown);
+          const shown = await showAdmobBanner(userId, recordShown);
+          if (!shown) showCoupangBanner(recordShown);
         }
       } else {
         if (adsEnabled && shouldShowOnColdStart()) {
@@ -83,14 +90,15 @@ export function useAdBanner() {
 
   // Background → foreground detection (visibilitychange)
   useEffect(() => {
-    const handleVisibility = () => {
+    const handleVisibility = async () => {
       if (document.visibilityState === "visible") {
         if (adsEnabled && shouldShowOnForeground()) {
           const { bannerType } = useAdBannerStore.getState();
           if (bannerType === "coupang") {
             showCoupangBanner(recordShown);
           } else {
-            showAdmobBanner(userId, recordShown);
+            const shown = await showAdmobBanner(userId, recordShown);
+            if (!shown) showCoupangBanner(recordShown);
           }
         }
       }

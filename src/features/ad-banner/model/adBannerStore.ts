@@ -73,11 +73,9 @@ export const useAdBannerStore = create<AdBannerState>(() => ({
   },
 
   shouldShowOnColdStart: () => {
-    const state = useAdBannerStore.getState();
-    if (!state.adsEnabled) return false;
-    const lastShown = getLastShownMs();
-    if (lastShown === 0) return true; // first ever launch
-    return Date.now() - lastShown >= BACKGROUND_COOLDOWN_MS;
+    // Cold start (app killed + relaunch) always shows ad.
+    // Cooldown applies only to background→foreground transitions.
+    return isAdsEnabled();
   },
 
   shouldShowOnForeground: () => {
