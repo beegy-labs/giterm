@@ -42,6 +42,14 @@ Read `docs/llm/policies/patterns.md` — the authoritative 2026 patterns referen
 - [ ] Secret fields redacted in `Debug` impl
 - [ ] `Result<T, String>` at IPC boundary, `anyhow` internally
 
+### Battery / Mobile (iOS)
+- [ ] Polling queries have `refetchIntervalInBackground: false` (explicit)
+- [ ] `setInterval` / manual polling guarded by `document.visibilityState === "visible"`
+- [ ] SSH sessions NOT disconnected on `visibilitychange → hidden` (Rust keepalive handles it)
+- [ ] New `visibilitychange` handler follows hide→snapshot / show→reconnect pattern
+
+**Full battery policy**: `docs/llm/policies/battery-mobile.md`
+
 ### Privacy
 - [ ] No IP/username/port rendered in UI — connection name only
 

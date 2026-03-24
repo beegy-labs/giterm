@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { sshExec } from "@/shared/adapters/sshExecApi";
 import { STALE_TIME_FAST, REFETCH_INTERVAL_FAST } from "@/shared/lib/constants";
 import {
@@ -14,15 +14,24 @@ async function fetchServerStats(sessionId: string): Promise<ServerStats> {
   return parseServerStats(sessionId, output);
 }
 
-export function useServerStats(sessionId: string | undefined) {
-  const { data: stats = null, error } = useQuery({
-    queryKey: ["serverStats", sessionId ?? ""],
-    queryFn: () => fetchServerStats(sessionId!),
+export const serverStatsQuery = (sessionId: string) =>
+  queryOptions({
+    queryKey: ["serverStats", sessionId],
+    queryFn: () => fetchServerStats(sessionId),
     staleTime: STALE_TIME_FAST,
     refetchInterval: REFETCH_INTERVAL_FAST,
+    // Stop polling when the app is backgrounded — saves battery on iOS
+    refetchIntervalInBackground: false,
     retry: false,
     enabled: !!sessionId,
   });
+
+export function useServerStats(sessionId: string | undefined) {
+  const { data: stats = null, error } = useQuery(
+    sessionId
+      ? serverStatsQuery(sessionId)
+      : { queryKey: ["serverStats", ""], enabled: false },
+  );
 
   return { stats, error: error ? String(error) : null };
 }

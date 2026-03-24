@@ -29,5 +29,6 @@
 | Doc | Purpose |
 |-----|---------|
 | `policies/patterns.md` | **2026 code patterns** — React 19, Zustand 5, TanStack Query v5, Tauri v2, Tailwind v4 |
+| `policies/battery-mobile.md` | iOS battery optimization — polling rules, SSH keepalive, auto-reconnect |
 | `policies/tdd.md` | Testing strategy (Trophy: unit → integration → manual) |
 | `policies/dependency-upgrade.md` | Dependency upgrade policy — when, how, breaking change checklist |

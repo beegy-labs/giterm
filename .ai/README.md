@@ -16,6 +16,7 @@
 | Code patterns (2026) | `docs/llm/policies/patterns.md` |
 | Code review checklist | `.ai/code-review.md` |
 | Dependency upgrade policy | `docs/llm/policies/dependency-upgrade.md` |
+| iOS battery & session policy | `docs/llm/policies/battery-mobile.md` |
 | Full docs index | `docs/llm/README.md` |
 | App SSOT | `docs/llm/apps/giterm.md` |
 | Testing strategy | `docs/llm/policies/tdd.md` |

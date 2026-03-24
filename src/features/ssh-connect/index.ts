@@ -11,4 +11,5 @@ export {
   subscribeSshDisconnect,
 } from "./adapters/events/sshEventAdapter";
 export { cancelReconnect, reconnectSession } from "./model/useReconnect";
+export { useAutoReconnect } from "./model/useAutoReconnect";
 export { closeSession } from "./model/closeSession";
