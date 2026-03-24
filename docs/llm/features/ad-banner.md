@@ -49,12 +49,13 @@ ATT block dropped before `.await` to keep future `Send` (block2::RcBlock is !Sen
 
 | Trigger | Condition | Action |
 |---------|-----------|--------|
-| App cold start | `lastShownAt === 0` OR `Date.now() - lastShownAt >= 1h` AND `adsEnabled` | show banner |
+| App cold start | `adsEnabled` (always — no cooldown) | show banner |
 | Background → foreground | `Date.now() - lastShownAt >= 1h` AND `adsEnabled` | show banner |
+| AdMob SDK not linked / banner not created | `admobBannerIsVisible() === false` after show | fall back to Coupang |
 | User disables ads | `adsEnabled = false` | hide banner immediately |
-| AdMob SDK not linked | `GADMobileAds class not found` | warn + no-op (graceful) |
 
-**Cooldown**: 1 hour (`BACKGROUND_COOLDOWN_MS = 60 * 60 * 1000` in `adBannerStore.ts`)
+**Cooldown**: 1 hour applies to **background→foreground only** (`shouldShowOnForeground`).
+Cold start always shows regardless of `lastShownAt` — WKWebView localStorage persists across TestFlight updates, so `lastShownAt` is never reliably 0.
 
 ## State Store (`adBannerStore.ts`)
 
