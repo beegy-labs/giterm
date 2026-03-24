@@ -28,7 +28,17 @@
 
 | Doc | Purpose |
 |-----|---------|
-| `policies/patterns.md` | **2026 code patterns** — React 19, Zustand 5, TanStack Query v5, Tauri v2, Tailwind v4 |
-| `policies/battery-mobile.md` | iOS battery optimization — polling rules, SSH keepalive, auto-reconnect |
+| `policies/patterns.md` | **Index** — links to all 2026 pattern docs |
+| `policies/patterns-query.md` | TanStack Query v5 patterns |
+| `policies/patterns-zustand.md` | Zustand 5 patterns |
+| `policies/patterns-react.md` | React 19 patterns |
+| `policies/patterns-typescript.md` | TypeScript 6 strict patterns |
+| `policies/patterns-tauri.md` | Tauri v2 IPC + Vite 8 patterns |
+| `policies/patterns-rust.md` | Rust commands + tokio patterns |
+| `policies/patterns-tailwind.md` | Tailwind v4 + iOS CSS var patterns |
+| `policies/battery-mobile.md` | iOS battery optimization, SSH keepalive, auto-reconnect |
 | `policies/tdd.md` | Testing strategy (Trophy: unit → integration → manual) |
-| `policies/dependency-upgrade.md` | Dependency upgrade policy — when, how, breaking change checklist |
+| `policies/dependency-upgrade.md` | Dependency upgrade policy |
+| `policies/cdd.md` | CDD framework definition *(framework exception)* |
+| `policies/sdd.md` | SDD framework definition *(framework exception)* |
+| `policies/add.md` | ADD execution model *(framework exception)* |
