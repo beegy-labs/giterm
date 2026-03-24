@@ -72,15 +72,17 @@ Suppresses WKWebView's scroll-to-focus trigger on input focus (10ms, invisible).
 
 ### Layer 4 — CSS: `position: fixed` on Mobile Root Container
 
-**File**: `src/pages/terminal/ui/TerminalPage.tsx` -- `MobileLayout`
+**File**: `src/widgets/mobile-layout/ui/MobileLayout.tsx`
 
 ```tsx
-<div className="fixed left-0 top-0 w-screen overflow-hidden bg-background"
-     style={{ height: viewportHeight }}>
+<div className="overlay-fullscreen flex flex-col overflow-hidden bg-background">
+  {/* terminal section — shrinks with keyboard via --vvh */}
+  <div style={{ height: "var(--vvh, 100vh)" }}>
 ```
 
-`position: fixed` anchors to VISUAL VIEWPORT regardless of `UIScrollView.contentOffset`.
-`viewportHeight = visualViewport.height` tracks keyboard appearance.
+`position: fixed` (via `overlay-fullscreen`) anchors to VISUAL VIEWPORT regardless of
+`UIScrollView.contentOffset`. Terminal section uses `--vvh` (set by `useVisualViewport`)
+which shrinks when the keyboard appears, triggering `fitAddon.fit()` via ResizeObserver.
 
 ## What NOT to Do
 

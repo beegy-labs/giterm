@@ -91,15 +91,18 @@ const handleResize = () => {
 
 | CSS Variable | Consumer | Purpose |
 |---|---|---|
-| `--vvh` | `dialog.tsx`, MobileLayout | Viewport height (shrinks on keyboard) |
+| `--vvh` | MobileLayout terminal section, dialog/alert-dialog centering | Viewport height (shrinks on keyboard) |
+| `--app-h` | `overlay-fullscreen` utility | Full screen height (never shrinks) |
 
 ```tsx
-// MobileLayout -- position:fixed + CSS var height, NO transform
-<div className="fixed left-0 top-0 w-screen overflow-hidden bg-background"
-     style={{ height: "var(--vvh, 100vh)" }}>
+// MobileLayout -- overlay-fullscreen (position:fixed), terminal section uses --vvh
+<div className="overlay-fullscreen flex flex-col overflow-hidden bg-background">
+  <div style={{ height: "var(--vvh, 100vh)" }}> {/* terminal section */}
 
-// dialog.tsx -- keyboard-safe centering
-<div style={{ height: "var(--vvh, 100vh)" }} className="fixed inset-x-0 top-0 ...">
+// dialog.tsx / alert-dialog.tsx -- keyboard-aware centering
+// Centering wrapper uses --vvh so dialog re-centers in visible area when keyboard shows
+<div className="overlay-fullscreen z-50 flex items-center justify-center p-4"
+     style={{ height: "var(--vvh, var(--app-h, 100vh))" }}>
 ```
 
 **NOTE**: `100dvh` != `visualViewport.height` in Tauri WKWebView.

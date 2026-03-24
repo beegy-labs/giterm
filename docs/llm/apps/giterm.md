@@ -1,6 +1,6 @@
 # giterm — App SSOT
 
-> SSH terminal client | **Last Updated**: 2026-03-23
+> SSH terminal client | **Last Updated**: 2026-03-24
 
 ## Tech Stack
 
@@ -149,4 +149,5 @@ Tauri overwrites `CFBundleVersion` — `postBuildScripts` in `project.yml` re-pa
 - **Credentials**: `SECRET_FIELDS` (FE) ↔ `ALLOWED_FIELDS` (BE) must stay in sync. `loadSecrets()` enriches from keychain at connect time.
 - **StrictMode + `listen()`**: adapter uses `cancelled` flag to prevent double-subscription.
 - **App exit**: `RunEvent::Exit` → `disconnect_all()` + `stop_all()` + debug `cleanup()`.
+- **Dialog + keyboard**: Dialog centering wrapper uses `--vvh` (not `--app-h`) so it re-centers within the visible area when keyboard appears. Both `dialog.tsx` and `alert-dialog.tsx` apply `style={{ height: "var(--vvh, ...)" }}` on the centering div.
 - **iOS dev mode**: `devUrl: "http://127.0.0.1:1420"` + `vite host: "0.0.0.0"` required. External `<script type="module" src=...>` does NOT execute in WKWebView (unresolved 2026-03-22).
