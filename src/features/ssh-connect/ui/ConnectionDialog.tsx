@@ -185,6 +185,7 @@ export function ConnectionDialog() {
   const editingConnection = useConnectDialogStore((s) => s.editingConnection);
   const updateConnection = useConnectionStore((s) => s.updateConnection);
   const { connect, connecting, error, setError } = useConnect();
+  const addConnection = useConnectionStore((s) => s.addConnection);
 
   const [name, setName] = useState("");
   const [host, setHost] = useState("");
@@ -308,6 +309,39 @@ export function ConnectionDialog() {
       },
       jumpParams,
     ));
+  };
+
+  const handleSaveNew = () => {
+    if (!validateJumpPort()) return;
+    const config = buildConnectionConfig(
+      {
+        name,
+        host,
+        port,
+        username,
+        authMethod,
+        password,
+        keyPath,
+        passphrase,
+        startupCommand,
+        filterAuth: true,
+      },
+      jumpParams,
+    );
+    const saveData = showJumpHost
+      ? config
+      : {
+          ...config,
+          jumpHost: undefined,
+          jumpPort: undefined,
+          jumpUsername: undefined,
+          jumpAuthMethod: undefined,
+          jumpPassword: undefined,
+          jumpKeyPath: undefined,
+          jumpPassphrase: undefined,
+        };
+    addConnection({ id: crypto.randomUUID(), ...saveData });
+    setOpen(false);
   };
 
   const handleSave = () => {
@@ -576,6 +610,10 @@ export function ConnectionDialog() {
             </Button>
             {isEditing ? (
               <Button size="sm" onClick={handleSave} disabled={!isValid}>
+                Save
+              </Button>
+            ) : testStatus === "success" ? (
+              <Button size="sm" onClick={handleSaveNew} disabled={!isValid}>
                 Save
               </Button>
             ) : (
