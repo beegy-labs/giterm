@@ -1,31 +1,22 @@
-# .ai — Navigation Hub
+# giterm
 
-> giterm project context | **Architecture**: Tauri v2 + Rust + russh (SSH)
+> CDD Layer 1 — Entry Point | **Last Updated**: 2026-03-24
 
-## Quick Links
+## Project
 
-| Resource | Path | Purpose |
-|----------|------|---------|
-| Rules | `.ai/rules.md` | Core DO/DON'T |
-| App Spec | `.ai/apps/giterm.md` | App indicator |
-| Full Spec | `docs/llm/apps/giterm.md` | App SSOT (Tier 2) |
-| Feature Docs | `docs/llm/features/*.md` | Per-feature SSOT (11 docs, Tier 2) |
-| Roadmap | `.specs/apps/giterm/roadmap.md` | Milestones |
+**giterm** — Tauri v2 + Rust SSH terminal client (React 19 + xterm.js, iOS + Desktop).
 
-## Architecture
+## Navigation
 
-```
-Frontend (React + xterm.js)
-    ↕ Tauri IPC (tauri-specta)
-Backend (Rust + russh)
-    ↕ SSH Protocol
-Remote Server
-```
-
-## Policies
-
-| Policy | Path |
+| Action | Read |
 |--------|------|
-| CDD | `docs/llm/policies/cdd.md` |
-| SDD | `docs/llm/policies/sdd.md` |
-| ADD | `docs/llm/policies/add.md` |
+| Core rules | `.ai/rules.md` |
+| Architecture | `.ai/architecture.md` |
+| Git & commits | `.ai/git-flow.md` |
+| Code patterns index | `docs/llm/policies/patterns.md` |
+| Code review checklist | `.ai/code-review.md` |
+| Battery & session policy | `docs/llm/policies/battery-mobile.md` |
+| Dependency upgrade | `docs/llm/policies/dependency-upgrade.md` |
+| Full docs index | `docs/llm/README.md` |
+| App SSOT | `docs/llm/apps/giterm.md` |
+| Testing strategy | `docs/llm/policies/tdd.md` |

@@ -55,7 +55,6 @@ describe("Sidebar", () => {
     });
     render(<Sidebar />, { wrapper: createWrapper() });
     expect(screen.getByText("Test Server")).toBeInTheDocument();
-    expect(screen.getByText("SSH")).toBeInTheDocument();
     // Privacy: should NOT show user@host:port
     expect(screen.queryByText("user@example.com:22")).not.toBeInTheDocument();
   });

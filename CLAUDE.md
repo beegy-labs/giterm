@@ -24,7 +24,7 @@ giterm — Tauri v2 + Rust + React desktop + iOS app (SSH terminal client)
 - State: Zustand stores in `entities/*/model/`, derived state via selectors (not store getters)
 - Async: TanStack Query `queryOptions()` factories in `shared/queries/`
 - Tests: co-located `*.test.tsx` / `*.test.ts` files
-- Design: Midnight Gentle Study theme (WCAG AAA), 8pt grid
+- Design: Signal Dark theme (WCAG AAA), 8pt grid
 - Privacy: NEVER display IP/username/port in UI — use connection name only
 - Commits: conventional format (`feat:`, `fix:`, `chore:`)
 

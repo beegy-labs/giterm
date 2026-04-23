@@ -14,7 +14,6 @@ interface ConnectParams {
   keyPath?: string;
   passphrase?: string;
   startupCommand?: string;
-  tmuxMouseOn?: boolean;
   jumpHost?: string;
   jumpPort?: number;
   jumpUsername?: string;
@@ -51,7 +50,6 @@ export function useConnect() {
         passphrase:
           params.authMethod === "private-key" ? params.passphrase : undefined,
         startupCommand: params.startupCommand || undefined,
-        tmuxMouseOn: params.tmuxMouseOn || undefined,
         jumpHost: params.jumpHost || undefined,
         jumpPort: params.jumpPort,
         jumpUsername: params.jumpUsername || undefined,
@@ -64,7 +62,7 @@ export function useConnect() {
       await startSession(connectionConfig, connectionConfig.name);
       addConnection(connectionConfig);
       setOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       // startSession already marked the session as "error" in the store;
       // we just need to surface the message to the dialog UI.
       setError(classifySshError(err));

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { QueryProvider } from "@/app/providers/QueryProvider";
 import { ErrorBoundary } from "@/shared/ui/error-boundary";
 import { TerminalPage } from "@/pages/terminal";
+import { useAutoReconnect } from "@/features/ssh-connect";
 
 /**
  * iOS 26 regression: after keyboard dismissal, visualViewport.offsetTop stays non-zero,
@@ -28,6 +29,7 @@ function useIosScrollReset() {
 
 export default function App() {
   useIosScrollReset();
+  useAutoReconnect();
   return (
     <ErrorBoundary>
       <QueryProvider>

@@ -19,8 +19,6 @@ import { useTerminalInstances } from "../model/useTerminalInstances";
 import { useSshEvents } from "../model/useSshEvents";
 import { useTouchGestures } from "../model/useTouchGestures";
 
-import "@xterm/xterm/css/xterm.css";
-
 interface TerminalViewProps {
   showToolbar?: boolean;
 }
@@ -31,7 +29,6 @@ export function TerminalView({ showToolbar = false }: TerminalViewProps) {
   const sessions = useSessionStore((s) => s.sessions);
   const isMobile = useIsMobile();
   const fontSize = useTerminalSettingsStore((s) => s.fontSize);
-
   const [isCtrlActive, setIsCtrlActive] = useState(false);
   const [isAltActive, setIsAltActive] = useState(false);
   const [isShiftActive, setIsShiftActive] = useState(false);

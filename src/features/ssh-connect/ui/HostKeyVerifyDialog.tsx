@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ShieldAlert, ShieldQuestion } from "lucide-react";
+import { CodeBlock } from "@/shared/ui/code-block";
 import {
   Dialog,
   DialogContent,
@@ -65,23 +66,13 @@ export function HostKeyVerifyDialog() {
 
         <div className="space-y-3">
           {isChanged && request.oldFingerprint && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">
-                Previous fingerprint
-              </p>
-              <code className="block break-all rounded-sm bg-muted px-3 py-2 text-xs">
-                {request.oldFingerprint}
-              </code>
-            </div>
+            <CodeBlock label="Previous fingerprint">
+              {request.oldFingerprint}
+            </CodeBlock>
           )}
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">
-              {isChanged ? "New fingerprint" : "Fingerprint"}
-            </p>
-            <code className="block break-all rounded-sm bg-muted px-3 py-2 text-xs">
-              {request?.fingerprint}
-            </code>
-          </div>
+          <CodeBlock label={isChanged ? "New fingerprint" : "Fingerprint"}>
+            {request?.fingerprint}
+          </CodeBlock>
         </div>
 
         <DialogFooter>

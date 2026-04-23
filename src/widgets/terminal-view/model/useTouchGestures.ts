@@ -56,9 +56,12 @@ export function useTouchGestures(args: {
   } | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const longPressRectRef = useRef<DOMRect | null>(null);
+  /** baseY snapshot taken at touchStart — prevents drift from new output arriving
+   *  during the 400ms long-press wait (primary buffer only; alt screen is always 0) */
+  const selectionBaseYRef = useRef<number>(0);
 
   const touchToCell = useCallback(
-    (clientX: number, clientY: number, preRect?: DOMRect | null) => {
+    (clientX: number, clientY: number, preRect?: DOMRect | null, preBaseY?: number) => {
       if (!activeSessionId) return null;
       const inst = instancesRef.current.get(activeSessionId);
       if (!inst) return null;
@@ -77,7 +80,8 @@ export function useTouchGestures(args: {
           term.rows - 1,
         ),
       );
-      return { col, row, bufferRow: row + term.buffer.active.baseY };
+      const baseY = preBaseY ?? term.buffer.active.baseY;
+      return { col, row, bufferRow: row + baseY };
     },
     [activeSessionId, instancesRef],
   );
@@ -97,12 +101,16 @@ export function useTouchGestures(args: {
           : null;
         longPressRectRef.current =
           inst?.containerEl.getBoundingClientRect() ?? null;
+        // Snapshot baseY so long-press and drag use a stable coordinate origin.
+        // In normal mode, new SSH output can arrive during the 400ms wait and
+        // increase baseY, which would shift the selection down by that many lines.
+        selectionBaseYRef.current = inst?.terminal.buffer.active.baseY ?? 0;
 
         const cx = touch.clientX;
         const cy = touch.clientY;
         longPressTimerRef.current = setTimeout(() => {
           longPressTimerRef.current = null;
-          const cell = touchToCell(cx, cy, longPressRectRef.current);
+          const cell = touchToCell(cx, cy, longPressRectRef.current, selectionBaseYRef.current);
           if (!cell) return;
           isSelectingRef.current = true;
           selectionStartRef.current = cell;
@@ -140,7 +148,7 @@ export function useTouchGestures(args: {
           ? instancesRef.current.get(activeSessionId)
           : null;
         if (inst) {
-          const cell = touchToCell(touch.clientX, touch.clientY);
+          const cell = touchToCell(touch.clientX, touch.clientY, null, selectionBaseYRef.current);
           if (cell) {
             const start = selectionStartRef.current;
             const startOff =

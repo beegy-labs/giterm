@@ -1,0 +1,114 @@
+name: giterm
+options:
+  bundleIdPrefix: com.beegy.giterm
+  deploymentTarget:
+    iOS: 14.0
+fileGroups: [../../src]
+configs:
+  debug: debug
+  release: release
+settingGroups:
+  app:
+    base:
+      PRODUCT_NAME: giterm
+      PRODUCT_BUNDLE_IDENTIFIER: com.beegy.giterm
+targetTemplates:
+  app:
+    type: application
+    sources:
+      - path: Sources
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      groups: [app]
+targets:
+  giterm_iOS:
+    type: application
+    platform: iOS
+    attributes:
+      DevelopmentTeam: 4VF752P8A8
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+      - path: giterm_iOS
+      - path: assets
+        buildPhase: resources
+        type: folder
+      - path: LaunchScreen.storyboard
+    info:
+      path: giterm_iOS/Info.plist
+      properties:
+        LSRequiresIPhoneOS: true
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiredDeviceCapabilities: [arm64, metal]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleShortVersionString: 1.0.0
+        CFBundleVersion: "260322.1"
+        GADApplicationIdentifier: $(GAD_APP_ID)
+        NSUserTrackingUsageDescription: "광고를 개인화하기 위해 기기 식별자를 사용합니다."
+        SKAdNetworkItems:
+          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
+    entitlements:
+      path: giterm_iOS/giterm_iOS.entitlements
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      base:
+        DEVELOPMENT_TEAM: 4VF752P8A8
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_BITCODE: false
+        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        GAD_APP_ID: ca-app-pub-5019286268878126~2387220377
+        ARCHS: arm64
+        VALID_ARCHS: arm64
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+        EXCLUDED_ARCHS: x86_64
+        LIBRARY_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)"
+      configurations:
+        Debug:
+          GAD_APP_ID: ca-app-pub-3940256099942544~1458002511
+      groups: [app]
+    dependencies:
+      - framework: libapp.a
+        embed: false
+      - sdk: CoreGraphics.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: QuartzCore.framework
+      - sdk: Security.framework
+      - sdk: UIKit.framework
+      - sdk: WebKit.framework
+    preBuildScripts:
+      - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+        name: Build Rust Code
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+    postBuildScripts:
+      - script: |
+          BUILD_NUM_FILE="${SRCROOT}/../../../.build_number"
+          if [ -f "$BUILD_NUM_FILE" ]; then
+            BUILD_NUM=$(cat "$BUILD_NUM_FILE" | tr -d '[:space:]')
+            BUNDLE_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
+            if [ -f "$BUNDLE_PLIST" ]; then
+              /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUM" "$BUNDLE_PLIST"
+              echo "[giterm] CFBundleVersion patched to $BUILD_NUM in bundle"
+            else
+              echo "[giterm] bundle plist not found at $BUNDLE_PLIST"
+            fi
+          fi
+        name: Patch Build Number
+        basedOnDependencyAnalysis: false

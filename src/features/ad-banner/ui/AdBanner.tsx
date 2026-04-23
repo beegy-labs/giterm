@@ -1,28 +1,55 @@
-import { DevFrame } from "@/shared/ui/dev-frame";
 import { useAdBannerStore } from "../model/adBannerStore";
-
-/** Standard mobile banner height (50pt) */
-const BANNER_HEIGHT = 50;
+import { useAdBanner, hideBanner } from "../model/useAdBanner";
+import { CoupangBanner } from "./CoupangBanner";
 
 /**
- * AdBanner — fixed-height slot for AdMob banner ads.
+ * AdBanner — mounts ad logic and renders the appropriate banner.
  *
- * Collapses to zero height when no ad is loaded.
- * TODO: Replace placeholder with actual AdMob SDK integration.
+ * - admob: native UIView managed by Rust/ObjC2. Renders a close button overlay.
+ * - coupang: DOM-based carousel banner with close button.
  */
 export function AdBanner() {
-  const isAdLoaded = useAdBannerStore((s) => s.isAdLoaded);
+  useAdBanner();
+  const bannerType = useAdBannerStore((s) => s.bannerType);
 
-  if (!isAdLoaded) return null;
+  if (bannerType === "coupang") {
+    return <CoupangBanner onClose={hideBanner} />;
+  }
+
+  if (bannerType === "admob") {
+    return (
+      <div className="relative" style={{ height: "50px" }}>
+        {/* Close button overlaid on native AdMob UIView */}
+        <button
+          type="button"
+          onClick={hideBanner}
+          className="absolute right-1 top-1 z-50 flex size-5 items-center justify-center rounded-full bg-black/40 text-[10px] text-white hover:bg-black/60"
+          aria-label="광고 닫기"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+/** Small toggle for settings — lets the user disable ads */
+export function AdToggle({ className }: { className?: string }) {
+  const adsEnabled = useAdBannerStore((s) => s.adsEnabled);
+  const setAdsEnabled = useAdBannerStore((s) => s.setAdsEnabled);
 
   return (
-    <DevFrame
-      name="AdBanner"
-      className="shrink-0 flex items-center justify-center border-b border-border bg-card/50"
-      style={{ height: BANNER_HEIGHT }}
+    <button
+      type="button"
+      onClick={() => setAdsEnabled(!adsEnabled)}
+      className={`flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground ${className ?? ""}`}
     >
-      {/* AdMob banner will be rendered here */}
-      <span className="text-xs text-muted-foreground">Ad</span>
-    </DevFrame>
+      <span
+        className={`inline-block size-1.5 rounded-full ${adsEnabled ? "bg-primary" : "bg-muted-foreground/40"}`}
+      />
+      {adsEnabled ? "ads on" : "ads off"}
+    </button>
   );
 }

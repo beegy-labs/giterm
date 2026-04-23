@@ -1,50 +1,47 @@
-# Rules — giterm
+# Core Development Rules
 
-> Core development rules | **Last Updated**: 2026-03-04
+> CDD Layer 1 | **Last Updated**: 2026-03-24
 
-## Frontend Architecture (FSD + Hexagonal)
+## Language Policy
 
-| Rule | Detail |
-|------|--------|
-| Pattern | FSD layers + Hexagonal segment roles |
-| Dependencies | app → pages → widgets → features → entities → shared |
-| No cross-import | Features cannot import other features (shared logic → `shared/lib/`) |
-| API in adapters | API calls via `features/*/adapters/api/`, never in UI |
-| Events in adapters | Tauri `listen()` via `features/*/adapters/events/`, never in UI |
-| Biz logic in model | State/hooks in `model/`, not in UI components |
-| Selectors | Derived state via exported selectors (e.g. `selectActiveSession`), not store getters. Every module exports via `index.ts` |
+ALL code, documentation, and commits MUST be in English.
 
-## Design System (Midnight Gentle Study)
+## Documentation Policy (2-Layer CDD)
 
-| Rule | Detail |
-|------|--------|
-| WCAG AAA | 7:1+ contrast ratio for all text |
-| 8pt grid | All spacing multiples of 8px |
-| Radius | 4px default (terminal style) |
-| Privacy | NEVER show IP/username/port in UI |
-| Minimal | Icon-only buttons, whitespace-embracing |
+| Layer | Path | Purpose |
+|-------|------|---------|
+| 1 | `.ai/` | Pointers (≤50 lines each) |
+| 2 | `docs/llm/` | SSOT (machine-optimized, full detail) |
 
-## TypeScript
+**CDD-first**: Update `docs/llm/` BEFORE writing code.
+**Before coding**: Read `docs/llm/policies/patterns.md` for 2026 patterns.
 
-| Rule | Detail |
-|------|--------|
-| Strict mode | `strict: true`, no `any` |
-| Imports | `@/` alias for `src/` |
-| Components | shadcn/ui (`shared/ui/`) + Tailwind CSS v4 |
-| State | Zustand (entities/features), TanStack Query (`queryOptions()` factory in `shared/queries/`) |
-| Error | `ErrorBoundary` wraps app root (class component, React 19) |
+## NEVER
 
-## Rust
+| Rule | Alternative |
+|------|-------------|
+| Business logic in UI components | `model/` hooks or `shared/lib/` |
+| Tauri IPC calls in UI | `features/*/adapters/api/` only |
+| Raw `listen()` in UI | `features/*/adapters/events/` only |
+| Inline derived state in store | Export selectors (`selectActiveSession`) |
+| `env(safe-area-inset-*)` in CSS | `--sat`/`--sab` vars only |
+| `transform` on `position:fixed` MobileLayout | Breaks touch coordinates |
+| `display:none` on xterm containers | Drops canvas renderer on iOS |
+| Show IP/username/port in UI | Connection name only |
+| `any` in TypeScript | `unknown`, discriminated unions, proper types |
+| Hardcode timing values (staleTime, debounce ms) | `shared/lib/constants.ts` named constants |
+| `onSuccess` for TanStack Query mutations | `onSettled` (runs on error too) |
 
-| Rule | Detail |
-|------|--------|
-| Commands | `#[specta::specta]` + `#[tauri::command]` |
-| SSH | russh 0.57 async, tokio runtime |
-| Data flow | Tauri events for server→client, commands for client→server |
+## ALWAYS
 
-## Dev & Commits
+| Rule | Details |
+|------|---------|
+| Strict TypeScript | `strict: true`, no `any`, `@/` import alias |
+| shadcn/ui + Tailwind v4 | `shared/ui/` — never raw HTML equivalents |
+| FSD dependency rule | app → pages → widgets → features → entities → shared |
+| Tauri commands | `#[specta::specta]` + `#[tauri::command]` |
+| `queryOptions()` factory | TanStack Query — SSOT for `queryKey` + `staleTime` |
+| `onSettled` for mutations | Invalidate cache on both success and error |
+| `refactor` commit type | Use for code restructuring without behavior change |
 
-| Rule | Detail |
-|------|--------|
-| Dev logging | File-based only (`/tmp/giterm-ime-*.log`, `/tmp/giterm-vp-*.log`), no screen overlay |
-| Commits | `feat:`, `fix:`, `chore:`, `docs:` |
+**SSOT**: `docs/llm/apps/giterm.md`

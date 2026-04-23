@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Circle } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -72,7 +72,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       setName("");
       setLocalPort("");
       setRemotePort("");
-    } catch (err) {
+    } catch (err: unknown) {
       setError(String(err));
     }
   };
@@ -91,7 +91,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       try {
         await tunnelStop(tunnel.id);
         updateTunnel(tunnel.id, { status: "stopped" });
-      } catch (err) {
+      } catch (err: unknown) {
         updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
     } else {
@@ -104,7 +104,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
           tunnel.remotePort,
         );
         updateTunnel(tunnel.id, { status: "active", error: undefined });
-      } catch (err) {
+      } catch (err: unknown) {
         updateTunnel(tunnel.id, { status: "error", error: String(err) });
       }
     }
@@ -125,13 +125,13 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
                 className="flex items-center gap-2 rounded-sm border border-border p-2 text-xs"
               >
                 <button type="button" onClick={() => handleToggle(tunnel)}>
-                  <Circle
-                    className={`size-3 ${
+                  <span
+                    className={`inline-block size-2.5 rounded-full ${
                       tunnel.status === "active"
-                        ? "fill-green-500 text-green-500"
+                        ? "bg-primary"
                         : tunnel.status === "error"
-                          ? "fill-red-500 text-red-500"
-                          : "fill-muted text-muted"
+                          ? "bg-destructive"
+                          : "bg-muted-foreground/40"
                     }`}
                   />
                 </button>

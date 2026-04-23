@@ -11,22 +11,10 @@ function Dialog({
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
-}
-
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
-}
-
-function DialogClose({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
 function DialogOverlay({
@@ -64,7 +52,7 @@ function DialogContent({
        * on the dialog, so the native input caret renders at the correct position.
        * pointer-events-none lets overlay dismiss clicks pass through the wrapper.
        */}
-      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none" style={{ height: "var(--vvh, var(--app-h, 100vh))" }}>
         <DialogPrimitive.Content
           data-slot="dialog-content"
           className={cn(
@@ -164,13 +152,9 @@ function DialogDescription({
 
 export {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogOverlay,
-  DialogPortal,
   DialogTitle,
-  DialogTrigger,
 }

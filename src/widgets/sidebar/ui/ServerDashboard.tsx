@@ -22,10 +22,10 @@ function StatBar({
 }) {
   const color =
     percent > 90
-      ? "bg-red-500"
+      ? "bg-destructive"
       : percent > 70
-        ? "bg-yellow-500"
-        : "bg-green-500";
+        ? "bg-amber-500"
+        : "bg-primary";
 
   return (
     <div className="flex items-center gap-2">

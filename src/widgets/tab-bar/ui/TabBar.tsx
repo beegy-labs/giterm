@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { StatusDot } from "@/shared/ui/status-dot";
 import { useSessionStore, MAX_SESSIONS } from "@/entities/session";
 import { useConnectDialogStore } from "@/features/ssh-connect";
-import { statusColor } from "@/shared/lib/statusColor";
 
 interface TabBarProps {
   onCloseSession?: (sessionId: string) => void;
@@ -76,7 +76,7 @@ export function TabBar({ onCloseSession }: TabBarProps) {
   if (sessions.length === 0) return null;
 
   return (
-    <div className="flex shrink-0 items-center gap-0.5 border-b border-border bg-card px-1">
+    <div className="flex shrink-0 items-center gap-0.5 border-b border-border bg-card/80 px-1.5 py-0.5">
       {sessions.map((session, index) => (
         <div
           key={session.sessionId}
@@ -86,27 +86,25 @@ export function TabBar({ onCloseSession }: TabBarProps) {
           onDrop={(e) => handleDrop(e, index)}
           onDragEnd={handleDragEnd}
           onClick={() => setActiveIndex(index)}
-          className={`group flex cursor-pointer items-center gap-2 border-b-2 px-3 py-1.5 text-xs transition-colors ${
+          className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
             index === activeIndex
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          } ${dragIndex === index ? "opacity-50" : ""} ${
+              ? "bg-accent text-foreground"
+              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+          } ${dragIndex === index ? "opacity-40" : ""} ${
             dropTarget === index && dropTarget !== dragIndex
-              ? "bg-accent/30"
+              ? "ring-1 ring-primary/40"
               : ""
           }`}
         >
-          <span
-            className={`inline-block size-2 shrink-0 rounded-full ${statusColor(session.status)}`}
-          />
-          <span className="max-w-24 truncate">
+          <StatusDot status={session.status} className="size-1.5" />
+          <span className="max-w-28 truncate">
             {session.connectionName || "Terminal"}
           </span>
           <button
             onClick={(e) => handleClose(e, session.sessionId)}
-            className="flex size-4 shrink-0 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100"
+            className="flex size-3.5 shrink-0 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-muted group-hover:opacity-60 group-hover:hover:opacity-100"
           >
-            <X className="size-3" />
+            <X className="size-2.5" />
           </button>
         </div>
       ))}
@@ -114,7 +112,7 @@ export function TabBar({ onCloseSession }: TabBarProps) {
         <Button
           variant="ghost"
           size="icon-xs"
-          className="ml-1"
+          className="ml-0.5 text-muted-foreground"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="size-3.5" />

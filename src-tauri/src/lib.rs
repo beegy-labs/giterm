@@ -2,6 +2,7 @@ mod commands;
 mod ssh;
 
 use commands::{
+    admob_request_att, admob_init, admob_banner_show, admob_banner_hide, admob_banner_is_visible,
     credential_store, credential_get, credential_delete, credential_delete_all,
     ime_log_append, ime_log_start, ime_log_stop, ImeLogState,
     vp_log_append, vp_log_start, vp_log_stop, VpLogState,
@@ -298,6 +299,11 @@ unsafe fn neutralize_controller_safe_area(wk: *mut objc2::runtime::AnyObject, to
 pub fn run() {
     let builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            admob_request_att,
+            admob_init,
+            admob_banner_show,
+            admob_banner_hide,
+            admob_banner_is_visible,
             credential_store,
             credential_get,
             credential_delete,

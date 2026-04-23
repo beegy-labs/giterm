@@ -1,39 +1,29 @@
 # iOS Caret Fix -- Viewport & Keyboard Layers
 
-> Companion to `ios-caret-fix.md` | Layers 5, 6, 7, 8 | **Last Updated**: 2026-03-12
+> Companion to `ios-caret-fix.md` | Layers 5, 6, 7, 8 | **Last Updated**: 2026-03-23
 
 ### Layer 5 -- CSS: Mobile Safe Area Architecture
 
-**Files**: `src/index.css`, `src/widgets/mobile-layout/ui/MobileLayout.tsx`, `src/shared/ui/mobile-screen.tsx`
+> Full SSOT → `docs/llm/features/ios-viewport.md`
+
+**Rule**: Safe area padding on **headers/bars only**, NEVER on `MobileLayout` container.
 
 ```css
-.pt-safe-bar    { padding-top: env(safe-area-inset-top); }
-.pt-safe-header { padding-top: calc(env(safe-area-inset-top) + 0.25rem); }
+/* src/index.css — uses CSS vars, never env() */
+.pt-safe-bar    { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px)); }
+.pt-safe-header { padding-top: calc(var(--sat, 0px) + var(--ad-banner-h, 0px) + 0.25rem); }
 ```
 
-**Rule**: `pt-safe-bar` on `MobileLayout` root **only**. Children must NOT duplicate safe area padding.
-
-```tsx
-// CORRECT -- MobileLayout is the single safe area SSOT
-<DevFrame className="... pt-safe-bar ...">       {/* MobileLayout -- has safe area */}
-  <AdBanner />                                    {/* no safe area */}
-  <MobileSessionTabBar />                         {/* no safe area */}
-  {terminalView}
-</DevFrame>
-
-// CORRECT -- MobileScreen children use plain padding
-<MobileScreen>
-  <MobileScreen.Header className="...">           {/* pt-1, NOT pt-safe-header */}
-  <MobileScreen.Bar className="...">              {/* no pt-safe-bar */}
-</MobileScreen>
-
-// WRONG -- double safe area padding
-<DevFrame className="pt-safe-bar">
-  <MobileSessionTabBar className="pt-safe-bar">   {/* DOUBLE padding */}
-</DevFrame>
+```
+MobileLayout (NO pt-safe — container never shrinks)
+├── MobileSessionTabBar  ← pt-safe-bar   (absorbs --sat)
+└── MobileScreen.Header  ← pt-safe-header (absorbs --sat + 4px)
 ```
 
-**DevFrame**: Labels on elements with `pt-safe` classes are offset below safe area via `env(safe-area-inset-top)`.
+`--sat` / `--sab` injected natively via ObjC retry loop in `src-tauri/src/lib.rs`.
+`env(safe-area-inset-top)` is NEVER used (WebKit Bug #191872 — value is 0 at first render).
+
+**DevFrame**: Labels on elements with `pt-safe` classes are offset below safe area.
 See `src/shared/ui/dev-frame.tsx`.
 
 ### Layer 6 -- JS: visualViewport scroll reset + focusout fix
@@ -101,15 +91,18 @@ const handleResize = () => {
 
 | CSS Variable | Consumer | Purpose |
 |---|---|---|
-| `--vvh` | `dialog.tsx`, MobileLayout | Viewport height (shrinks on keyboard) |
+| `--vvh` | MobileLayout terminal section, dialog/alert-dialog centering | Viewport height (shrinks on keyboard) |
+| `--app-h` | `overlay-fullscreen` utility | Full screen height (never shrinks) |
 
 ```tsx
-// MobileLayout -- position:fixed + CSS var height, NO transform
-<div className="fixed left-0 top-0 w-screen overflow-hidden bg-background"
-     style={{ height: "var(--vvh, 100vh)" }}>
+// MobileLayout -- overlay-fullscreen (position:fixed), terminal section uses --vvh
+<div className="overlay-fullscreen flex flex-col overflow-hidden bg-background">
+  <div style={{ height: "var(--vvh, 100vh)" }}> {/* terminal section */}
 
-// dialog.tsx -- keyboard-safe centering
-<div style={{ height: "var(--vvh, 100vh)" }} className="fixed inset-x-0 top-0 ...">
+// dialog.tsx / alert-dialog.tsx -- keyboard-aware centering
+// Centering wrapper uses --vvh so dialog re-centers in visible area when keyboard shows
+<div className="overlay-fullscreen z-50 flex items-center justify-center p-4"
+     style={{ height: "var(--vvh, var(--app-h, 100vh))" }}>
 ```
 
 **NOTE**: `100dvh` != `visualViewport.height` in Tauri WKWebView.

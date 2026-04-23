@@ -21,8 +21,6 @@ export interface ConnectionConfig {
   keyPath?: string;
   passphrase?: string;
   startupCommand?: string;
-  /** Auto-start tmux with mouse support on connect */
-  tmuxMouseOn?: boolean;
   jumpHost?: string;
   jumpPort?: number;
   jumpUsername?: string;

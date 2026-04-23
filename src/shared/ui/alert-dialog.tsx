@@ -59,7 +59,7 @@ function AlertDialogContent({
        * on the dialog, so the native input caret renders at the correct position.
        * pointer-events-none lets overlay dismiss clicks pass through the wrapper.
        */}
-      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="overlay-fullscreen z-50 flex items-center justify-center p-4 pointer-events-none" style={{ height: "var(--vvh, var(--app-h, 100vh))" }}>
         <AlertDialogPrimitive.Content
           data-slot="alert-dialog-content"
           data-size={size}
@@ -135,22 +135,6 @@ function AlertDialogDescription({
   )
 }
 
-function AlertDialogMedia({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-dialog-media"
-      className={cn(
-        "bg-muted mb-2 inline-flex size-16 items-center justify-center rounded-md sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-8",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
 function AlertDialogAction({
   className,
   variant = "default",
@@ -195,9 +179,6 @@ export {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogOverlay,
-  AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
 }

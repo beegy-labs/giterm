@@ -55,7 +55,7 @@ export async function reconnectSession(sessionId: string) {
 
       error: undefined,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     if (cancelled) return;
     useSessionStore.getState().updateSession(sessionId, {
       status: "error",
